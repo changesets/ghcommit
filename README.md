@@ -1,6 +1,6 @@
-# `@s0/ghcommit`
+# `@changesets/ghcommit`
 
-[![View on NPM](https://badgen.net/npm/v/@s0/ghcommit)](https://www.npmjs.com/package/@s0/ghcommit)
+[![View on NPM](https://badgen.net/npm/v/@changesets/ghcommit)](https://www.npmjs.com/package/@changesets/ghcommit)
 
 NPM / TypeScript package to commit changes GitHub repositories using the GraphQL API.
 
@@ -32,7 +32,7 @@ NPM / TypeScript package to commit changes GitHub repositories using the GraphQL
 Install using your favourite package manager:
 
 ```
-pnpm install @s0/ghcommit
+pnpm install @changesets/ghcommit
 ```
 
 ### Usage in github actions
@@ -103,7 +103,7 @@ Example:
 
 ```ts
 import { context, getOctokit } from "@actions/github";
-import { commitChangesFromRepo } from "@s0/ghcommit/git";
+import { commitChangesFromRepo } from "@changesets/ghcommit/git";
 
 const octokit = getOctokit(process.env.GITHUB_TOKEN);
 
@@ -179,7 +179,7 @@ Example:
 
 ```ts
 import { context, getOctokit } from "@actions/github";
-import { commitFilesFromDirectory } from "@s0/ghcommit/fs";
+import { commitFilesFromDirectory } from "@changesets/ghcommit/fs";
 
 const octokit = getOctokit(process.env.GITHUB_TOKEN);
 
@@ -245,7 +245,7 @@ Example:
 
 ```ts
 import { context, getOctokit } from "@actions/github";
-import { commitFilesFromBuffers } from "@s0/ghcommit/node";
+import { commitFilesFromBuffers } from "@changesets/ghcommit/node";
 
 const octokit = getOctokit(process.env.GITHUB_TOKEN);
 
