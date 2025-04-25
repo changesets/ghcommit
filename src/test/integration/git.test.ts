@@ -11,7 +11,7 @@ import { execFile } from "child_process";
 import { getOctokit } from "@actions/github";
 import { commitChangesFromRepo } from "../../git";
 import { getRefTreeQuery } from "../../github/graphql/queries";
-import { deleteBranches } from "./util";
+import { deleteBranches, waitForGitHubToBeReady } from "./util";
 import git from "isomorphic-git";
 
 const octokit = getOctokit(ENV.GITHUB_TOKEN);
@@ -194,6 +194,8 @@ describe("git", () => {
         log,
       });
 
+      await waitForGitHubToBeReady();
+
       await makeFileChangeAssertions(branch);
 
       // Expect the OID to be the HEAD commit
@@ -262,6 +264,8 @@ describe("git", () => {
           commit: oid,
         },
       });
+
+      await waitForGitHubToBeReady();
 
       await makeFileChangeAssertions(branch);
 

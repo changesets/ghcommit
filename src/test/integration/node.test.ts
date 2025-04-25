@@ -3,7 +3,7 @@ import { getOctokit } from "@actions/github";
 
 import { ENV, REPO, ROOT_TEST_BRANCH_PREFIX, log } from "./env.js";
 import { commitFilesFromBuffers } from "../../node.js";
-import { deleteBranches } from "./util.js";
+import { deleteBranches, waitForGitHubToBeReady } from "./util.js";
 import {
   createRefMutation,
   getRefTreeQuery,
@@ -169,6 +169,8 @@ describe("node", () => {
             log,
           });
 
+          await waitForGitHubToBeReady();
+
           await expectBranchHasTree({
             branch,
             // TODO: re-enable
@@ -196,6 +198,8 @@ describe("node", () => {
         ...BASIC_FILE_CONTENTS,
       });
 
+      await waitForGitHubToBeReady();
+
       // Don't test tree for this one as it will change over time / be unstable
       await expectBranchHasTree({
         branch,
@@ -220,6 +224,8 @@ describe("node", () => {
         ...BASIC_FILE_CONTENTS,
       });
 
+      await waitForGitHubToBeReady();
+
       // Don't test tree for this one as it will change over time / be unstable
       await expectBranchHasTree({
         branch,
@@ -243,6 +249,8 @@ describe("node", () => {
         },
         ...BASIC_FILE_CONTENTS,
       });
+
+      await waitForGitHubToBeReady();
 
       await expectBranchHasTree({
         branch,
@@ -280,6 +288,8 @@ describe("node", () => {
           force: true,
         });
 
+        await waitForGitHubToBeReady();
+
         await expectBranchHasTree({
           branch,
           // TODO: re-enable
@@ -303,6 +313,8 @@ describe("node", () => {
             oid: testTargetCommit2,
           },
         });
+
+        await waitForGitHubToBeReady();
 
         expect(() =>
           commitFilesFromBuffers({
@@ -337,6 +349,8 @@ describe("node", () => {
           },
         });
 
+        await waitForGitHubToBeReady();
+
         await commitFilesFromBuffers({
           octokit,
           ...REPO,
@@ -346,6 +360,8 @@ describe("node", () => {
           },
           ...BASIC_FILE_CONTENTS,
         });
+
+        await waitForGitHubToBeReady();
 
         await expectBranchHasTree({
           branch,
@@ -371,6 +387,8 @@ describe("node", () => {
           },
         });
 
+        await waitForGitHubToBeReady();
+
         await commitFilesFromBuffers({
           octokit,
           ...REPO,
@@ -380,6 +398,8 @@ describe("node", () => {
           },
           ...BASIC_FILE_CONTENTS,
         });
+
+        await waitForGitHubToBeReady();
 
         await expectBranchHasTree({
           branch,
@@ -413,6 +433,8 @@ describe("node", () => {
           ...BASIC_FILE_CONTENTS,
           message: input,
         });
+
+        await waitForGitHubToBeReady();
 
         const ref = (
           await getRefTreeQuery(octokit, {

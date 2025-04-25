@@ -35,3 +35,16 @@ export const deleteBranches = async (
       console.debug(`Deleted branch ${branch}`);
     }),
   );
+
+/**
+ * GitHub sometimes has a delay between making changes to a git repo,
+ * and those changes being reflected in the API.
+ *
+ * This function is a workaround to wait for GitHub to be ready
+ * before running these assertions.
+ *
+ * It slows down testing a bit,
+ * but it's better than having flaky tests.
+ */
+export const waitForGitHubToBeReady = () =>
+  new Promise((r) => setTimeout(r, 5000));
