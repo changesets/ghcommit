@@ -8,14 +8,11 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
   release-and-publish:
     runs-on: ubuntu-latest
-    environment: main
     steps:
-
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -28,20 +25,16 @@ jobs:
           VERSION=$(cat package.json | grep '"packageManager": "pnpm@' | sed 's/.*"pnpm@\([^"]*\)".*/\1/')
           npm install -g pnpm@$VERSION
       - name: Cache pnpm modules
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v 4.2.3
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: Configure PNPM to use token
-        run:
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
       - name: Run Changeset Workflow
-        uses: s0/changesets-action@63d3e3fda2c00696414ca2d6683e046289c13fd8 # v2.1.0
+        uses: changesets/action@06245a4e0a36c064a573d4150030f5ec548e4fcc # v1.4.10
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         with:
           publish: pnpm changeset publish
-          createGithubReleases: true
