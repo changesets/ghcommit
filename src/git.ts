@@ -19,14 +19,17 @@ const FILE_MODES = {
 
 export const commitChangesFromRepo = async ({
   base,
-  repoDirectory = process.cwd(),
+  repoDirectory,
+  addDirectory,
   log,
   ...otherArgs
 }: CommitChangesFromRepoArgs): Promise<CommitFilesResult> => {
   const ref = base?.commit ?? "HEAD";
+  const resolvedRepoDirectory =
+    repoDirectory ?? (await git.findRoot({ fs, filepath: process.cwd() }));
   const gitLog = await git.log({
     fs,
-    dir: repoDirectory,
+    dir: resolvedRepoDirectory,
     ref,
     depth: 1,
   });
@@ -47,14 +50,14 @@ export const commitChangesFromRepo = async ({
   };
   await git.walk({
     fs,
-    dir: repoDirectory,
+    dir: addDirectory ?? resolvedRepoDirectory,
     trees,
     map: async (filepath, [commit, workdir]) => {
       // Don't include ignored files
       if (
         await git.isIgnored({
           fs,
-          dir: repoDirectory,
+          dir: resolvedRepoDirectory,
           filepath,
         })
       ) {

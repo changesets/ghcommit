@@ -107,7 +107,17 @@ export interface CommitChangesFromRepoArgs extends CommitFilesBasedArgs {
   /**
    * The root of the repository.
    *
-   * @default process.cwd()
+   * When unspecified, the root of the repository will be found by recursively
+   * searching for the `.git` directory from the current working directory.
    */
   repoDirectory?: string;
+  /**
+   * Which directory to add the files from.
+   *
+   * Useful for monorepos where you want to add files from a specific directory only.
+   *
+   * Defaults to resolved value as {@link repoDirectory},
+   * which will add all changed files in the repository.
+   */
+  addDirectory?: string;
 }
