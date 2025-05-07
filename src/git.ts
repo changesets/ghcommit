@@ -6,6 +6,7 @@ import {
   CommitFilesFromBuffersArgs,
   CommitFilesResult,
 } from "./interface";
+import { isAbsolute, relative } from "path";
 
 /**
  * @see https://isomorphic-git.org/docs/en/walk#walkerentry-mode
@@ -41,6 +42,19 @@ export const commitChangesFromRepo = async ({
     throw new Error(`Could not determine oid for ${ref}`);
   }
 
+  if (addFromDirectory && !isAbsolute(addFromDirectory)) {
+    throw new Error(
+      `addFromDirectory must be an absolute path, got ${addFromDirectory}`,
+    );
+  }
+
+  /**
+   * The directory to add files from. This is relative to the repository
+   * root, and is used to filter files.
+   */
+  const relativeStartDirectory =
+    addFromDirectory && relative(resolvedRepoDirectory, addFromDirectory) + "/";
+
   // Determine changed files
   const trees = [git.TREE({ ref: oid }), git.WORKDIR()];
   const additions: CommitFilesFromBuffersArgs["fileChanges"]["additions"] = [];
@@ -51,7 +65,7 @@ export const commitChangesFromRepo = async ({
   };
   await git.walk({
     fs,
-    dir: addFromDirectory ?? resolvedRepoDirectory,
+    dir: resolvedRepoDirectory,
     trees,
     map: async (filepath, [commit, workdir]) => {
       // Don't include ignored files
@@ -91,6 +105,13 @@ export const commitChangesFromRepo = async ({
       ) {
         // Iterate through these directories
         return true;
+      }
+      if (
+        relativeStartDirectory &&
+        !filepath.startsWith(relativeStartDirectory)
+      ) {
+        // Ignore files that are not in the specified directory
+        return null;
       }
       if (filterFiles && !filterFiles(filepath)) {
         // Ignore out files that don't match any specified filter
