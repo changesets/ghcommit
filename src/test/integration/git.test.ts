@@ -113,6 +113,11 @@ const makeFileChanges = async (repoDirectory: string) => {
     path.join(repoDirectory, "coverage", "foo", "bar"),
     "This file should be ignored",
   );
+  // Add a symlink in ignored directory
+  await fs.promises.symlink(
+    path.join(repoDirectory, "nested"),
+    path.join(repoDirectory, "node_modules", "nested")
+  );
 };
 
 const makeFileChangeAssertions = async (branch: string) => {
