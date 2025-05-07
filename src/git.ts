@@ -21,6 +21,7 @@ export const commitChangesFromRepo = async ({
   base,
   repoDirectory,
   addFromDirectory,
+  filterFiles,
   log,
   ...otherArgs
 }: CommitChangesFromRepoArgs): Promise<CommitFilesResult> => {
@@ -90,6 +91,10 @@ export const commitChangesFromRepo = async ({
       ) {
         // Iterate through these directories
         return true;
+      }
+      if (filterFiles && !filterFiles(filepath)) {
+        // Ignore out files that don't match any specified filter
+        return null;
       }
       if (!workdir) {
         // File was deleted

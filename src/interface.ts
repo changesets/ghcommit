@@ -120,4 +120,11 @@ export interface CommitChangesFromRepoArgs extends CommitFilesBasedArgs {
    * which will add all changed files in the repository.
    */
   addFromDirectory?: string;
+  /**
+   * An optional function that can be used to filter which files are included
+   * in the commit. True should be returned for files that should be included.
+   *
+   * By default, all files are included.
+   */
+  filterFiles?: (file: string) => boolean;
 }
