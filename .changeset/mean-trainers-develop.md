@@ -2,7 +2,7 @@
 "@changesets/ghcommit": minor
 ---
 
-Introduce `addDirectory` option for `commitChangesFromRepo` to allow users to
+Introduce `addFromDirectory` option for `commitChangesFromRepo` to allow users to
 specify a subdirectory of the git repository that should be used to add files
 from, rather then adding all changed files.
 

@@ -20,7 +20,7 @@ const FILE_MODES = {
 export const commitChangesFromRepo = async ({
   base,
   repoDirectory,
-  addDirectory,
+  addFromDirectory,
   log,
   ...otherArgs
 }: CommitChangesFromRepoArgs): Promise<CommitFilesResult> => {
@@ -50,7 +50,7 @@ export const commitChangesFromRepo = async ({
   };
   await git.walk({
     fs,
-    dir: addDirectory ?? resolvedRepoDirectory,
+    dir: addFromDirectory ?? resolvedRepoDirectory,
     trees,
     map: async (filepath, [commit, workdir]) => {
       // Don't include ignored files

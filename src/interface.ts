@@ -112,12 +112,12 @@ export interface CommitChangesFromRepoArgs extends CommitFilesBasedArgs {
    */
   repoDirectory?: string;
   /**
-   * Which directory to add the files from.
+   * The starting directory to recurse from when detecting changed files.
    *
    * Useful for monorepos where you want to add files from a specific directory only.
    *
-   * Defaults to resolved value as {@link repoDirectory},
+   * Defaults to resolved value of {@link repoDirectory},
    * which will add all changed files in the repository.
    */
-  addDirectory?: string;
+  addFromDirectory?: string;
 }
