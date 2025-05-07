@@ -40,12 +40,6 @@ export const commitChangesFromRepo = async ({
     dir: repoDirectory,
     trees,
     map: async (filepath, [commit, workdir]) => {
-      const prevOid = await commit?.oid();
-      const currentOid = await workdir?.oid();
-      // Don't include files that haven't changed, and exist in both trees
-      if (prevOid === currentOid && !commit === !workdir) {
-        return null;
-      }
       // Don't include ignored files
       if (
         await git.isIgnored({
@@ -54,6 +48,12 @@ export const commitChangesFromRepo = async ({
           filepath,
         })
       ) {
+        return null;
+      }
+      const prevOid = await commit?.oid();
+      const currentOid = await workdir?.oid();
+      // Don't include files that haven't changed, and exist in both trees
+      if (prevOid === currentOid && !commit === !workdir) {
         return null;
       }
       // Iterate through anything that may be a directory in either the
