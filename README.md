@@ -93,9 +93,26 @@ In addition to `CommitFilesBasedArgs`, this function has the following arguments
   /**
    * The root of the repository.
    *
-   * @default process.cwd()
+   * When unspecified, the root of the repository will be found by recursively
+   * searching for the `.git` directory from the current working directory.
    */
   repoDirectory?: string;
+  /**
+   * The starting directory to recurse from when detecting changed files.
+   *
+   * Useful for monorepos where you want to add files from a specific directory only.
+   *
+   * Defaults to resolved value of {@link repoDirectory},
+   * which will add all changed files in the repository.
+   */
+  addFromDirectory?: string;
+  /**
+   * An optional function that can be used to filter which files are included
+   * in the commit. True should be returned for files that should be included.
+   *
+   * By default, all files are included.
+   */
+  filterFiles?: (file: string) => boolean;
 }
 ```
 
