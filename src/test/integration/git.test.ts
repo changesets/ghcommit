@@ -82,6 +82,7 @@ const makeFileChanges = async (
   repoDirectory: string,
   changegroup:
     | "standard"
+    | "with-executable-file"
     | "with-ignored-symlink"
     | "with-included-valid-symlink"
     | "with-included-invalid-symlink",
@@ -120,6 +121,17 @@ const makeFileChanges = async (
     path.join(repoDirectory, "coverage", "foo", "bar"),
     "This file should be ignored",
   );
+  if (changegroup === "with-executable-file") {
+    // Add an executable file
+    await fs.promises.writeFile(
+      path.join(repoDirectory, "executable-file.sh"),
+      "#!/bin/bash\necho hello",
+    );
+    await fs.promises.chmod(
+      path.join(repoDirectory, "executable-file.sh"),
+      0o755,
+    );
+  }
   if (changegroup === "with-ignored-symlink") {
     // node_modules is ignored in this repo
     await fs.promises.mkdir(path.join(repoDirectory, "node_modules"), {
@@ -339,6 +351,51 @@ describe("git", () => {
           "Unexpected symlink at some-dir/nested, GitHub API only supports files and directories. You may need to add this file to .gitignore",
         );
       });
+    });
+
+    it(`should throw appropriate error when executable file is present`, async () => {
+      const branch = `${TEST_BRANCH_PREFIX}-executable-file`;
+      branches.push(branch);
+
+      await fs.promises.mkdir(testDir, { recursive: true });
+      const repoDirectory = path.join(testDir, `repo-executable-file`);
+
+      // Clone the git repo locally using the git cli and child-process
+      await new Promise<void>((resolve, reject) => {
+        const p = execFile(
+          "git",
+          ["clone", process.cwd(), `repo-executable-file`],
+          { cwd: testDir },
+          (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          },
+        );
+        p.stdout?.pipe(process.stdout);
+        p.stderr?.pipe(process.stderr);
+      });
+
+      await makeFileChanges(repoDirectory, "with-executable-file");
+
+      // Push the changes
+      await expect(() =>
+        commitChangesFromRepo({
+          octokit,
+          ...REPO,
+          branch,
+          message: {
+            headline: "Test commit",
+            body: "This is a test commit",
+          },
+          repoDirectory,
+          log,
+        }),
+      ).rejects.toThrow(
+        "Unexpected executable file at executable-file.sh, GitHub API only supports non-executable files and directories. You may need to add this file to .gitignore",
+      );
     });
 
     it("should correctly be able to base changes off specific commit", async () => {
