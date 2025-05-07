@@ -68,6 +68,11 @@ export const commitChangesFromRepo = async ({
           `Unexpected symlink at ${filepath}, GitHub API only supports files and directories. You may need to add this file to .gitignore`,
         );
       }
+      if ((await workdir?.mode()) === FILE_MODES.executableFile) {
+        throw new Error(
+          `Unexpected executable file at ${filepath}, GitHub API only supports non-executable files and directories. You may need to add this file to .gitignore`,
+        );
+      }
       const prevOid = await commit?.oid();
       const currentOid = await workdir?.oid();
       // Don't include files that haven't changed, and exist in both trees
