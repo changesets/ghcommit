@@ -49,7 +49,6 @@ export const commitFilesFromBase64 = async ({
   octokit,
   owner,
   repo,
-  repository,
   branch,
   base,
   force = false,
@@ -57,14 +56,9 @@ export const commitFilesFromBase64 = async ({
   fileChanges,
   log,
 }: CommitFilesFromBase64Args): Promise<CommitFilesResult> => {
-  const repositoryNameWithOwner = `${owner}/${repository}`;
+  const repositoryNameWithOwner = `${owner}/${repo}`;
   const baseRef = getBaseRef(base);
   const targetRef = `refs/heads/${branch}`;
-  repo = repo ?? repository;
-
-  if (!repo) {
-    throw new Error(`Argument 'repo' must be provided`);
-  }
 
   log?.debug(`Getting repo info ${repositoryNameWithOwner}`);
   const info = await getRepositoryMetadata(octokit, {
