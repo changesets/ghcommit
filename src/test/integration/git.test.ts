@@ -13,7 +13,6 @@ import { commitChangesFromRepo } from "../../git";
 import { getRefTreeQuery } from "../../github/graphql/queries";
 import { deleteBranches, waitForGitHubToBeReady } from "./util";
 import git from "isomorphic-git";
-import { mockCwd } from "mock-cwd";
 
 const octokit = getOctokit(ENV.GITHUB_TOKEN);
 
@@ -102,12 +101,16 @@ const makeFileChanges = async (
     path.join(repoDirectory, "new-file.txt"),
     "This is a new file",
   );
-  // Add a new file nested in a directory
+  // Add new files nested in a directory
   await fs.promises.mkdir(path.join(repoDirectory, "nested"), {
     recursive: true,
   });
   await fs.promises.writeFile(
     path.join(repoDirectory, "nested", "nested-file.txt"),
+    "This is a nested file",
+  );
+  await fs.promises.writeFile(
+    path.join(repoDirectory, "nested", "nested-file-2.md"),
     "This is a nested file",
   );
   // Add files that should be ignored
@@ -184,6 +187,11 @@ const makeFileChangeAssertions = async (branch: string) => {
     path: "nested/nested-file.txt",
     oid: "60eb5af9a0c03dc16dc6d0bd9a370c1aa4e095a3",
   });
+  await expectBranchHasFile({
+    branch,
+    path: "nested/nested-file-2.md",
+    oid: "60eb5af9a0c03dc16dc6d0bd9a370c1aa4e095a3",
+  });
   // Expect ignored files to not exist
   await expectBranchHasFile({ branch, path: ".env", oid: null });
   await expectBranchHasFile({
@@ -193,7 +201,10 @@ const makeFileChangeAssertions = async (branch: string) => {
   });
 };
 
-const makeSubdirectoryFileChangeAssertions = async (branch: string) => {
+const makeSubdirectoryFileChangeAssertions = async (
+  branch: string,
+  includeNonTxt: boolean,
+) => {
   // Expect new file outside of subdir to not exist
   await expectBranchHasFile({
     branch,
@@ -205,6 +216,11 @@ const makeSubdirectoryFileChangeAssertions = async (branch: string) => {
     branch,
     path: "nested/nested-file.txt",
     oid: "60eb5af9a0c03dc16dc6d0bd9a370c1aa4e095a3",
+  });
+  await expectBranchHasFile({
+    branch,
+    path: "nested/nested-file-2.md",
+    oid: includeNonTxt ? "60eb5af9a0c03dc16dc6d0bd9a370c1aa4e095a3" : null,
   });
   // Expect ignored files to not exist
   await expectBranchHasFile({ branch, path: ".env", oid: null });
@@ -285,7 +301,7 @@ describe("git", () => {
             headline: "Test commit",
             body: "This is a test commit",
           },
-          repoDirectory,
+          cwd: repoDirectory,
           log,
         });
 
@@ -346,7 +362,7 @@ describe("git", () => {
               headline: "Test commit",
               body: "This is a test commit",
             },
-            repoDirectory,
+            cwd: repoDirectory,
             log,
           }),
         ).rejects.toThrow(
@@ -391,7 +407,7 @@ describe("git", () => {
               headline: "Test commit",
               body: "This is a test commit",
             },
-            repoDirectory,
+            cwd: repoDirectory,
             log,
           }),
         ).rejects.toThrow(
@@ -437,7 +453,7 @@ describe("git", () => {
             headline: "Test commit",
             body: "This is a test commit",
           },
-          repoDirectory,
+          cwd: repoDirectory,
           log,
         }),
       ).rejects.toThrow(
@@ -491,7 +507,7 @@ describe("git", () => {
           headline: "Test commit",
           body: "This is a test commit",
         },
-        repoDirectory,
+        cwd: repoDirectory,
         log,
         base: {
           commit: oid,
@@ -505,405 +521,203 @@ describe("git", () => {
       await expectParentHasOid({ branch, oid });
     });
 
-    describe("when running directly in repository directory", () => {
-      describe("repoDirectory: unspecified", () => {
-        it(`should correctly commit all changes`, async () => {
-          const branch = `${TEST_BRANCH_PREFIX}-root-repodirectory-unspecified`;
-          branches.push(branch);
+    it(`filterFiles should correctly filter files`, async () => {
+      const branch = `${TEST_BRANCH_PREFIX}-root-repodirectory-unspecified-filter`;
+      branches.push(branch);
 
-          await fs.promises.mkdir(testDir, { recursive: true });
-          const repoDirectory = path.join(
-            testDir,
-            `repo-root-repodirectory-unspecified`,
-          );
+      await fs.promises.mkdir(testDir, { recursive: true });
+      const repoDirectory = path.join(
+        testDir,
+        `repo-root-repodirectory-unspecified-filter`,
+      );
 
-          // Clone the git repo locally using the git cli and child-process
-          await new Promise<void>((resolve, reject) => {
-            const p = execFile(
-              "git",
-              ["clone", process.cwd(), `repo-root-repodirectory-unspecified`],
-              { cwd: testDir },
-              (error) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve();
-                }
-              },
-            );
-            p.stdout?.pipe(process.stdout);
-            p.stderr?.pipe(process.stderr);
-          });
-
-          await makeFileChanges(repoDirectory, "standard");
-
-          // Push the changes
-          await mockCwd(repoDirectory, () =>
-            commitChangesFromRepo({
-              octokit,
-              ...REPO,
-              branch,
-              message: {
-                headline: "Test commit",
-                body: "This is a test commit",
-              },
-              log,
-            }),
-          );
-
-          await waitForGitHubToBeReady();
-
-          await makeFileChangeAssertions(branch);
-
-          // Expect the OID to be the HEAD commit
-          const oid =
-            (
-              await git.log({
-                fs,
-                dir: repoDirectory,
-                ref: "HEAD",
-                depth: 1,
-              })
-            )[0]?.oid ?? "NO_OID";
-
-          await expectParentHasOid({ branch, oid });
-        });
-
-        it(`addFromDirectory should correctly filter files`, async () => {
-          const branch = `${TEST_BRANCH_PREFIX}-root-repodirectory-unspecified-add`;
-          branches.push(branch);
-
-          await fs.promises.mkdir(testDir, { recursive: true });
-          const repoDirectory = path.join(
-            testDir,
-            `repo-root-repodirectory-unspecified-add`,
-          );
-
-          // Clone the git repo locally using the git cli and child-process
-          await new Promise<void>((resolve, reject) => {
-            const p = execFile(
-              "git",
-              [
-                "clone",
-                process.cwd(),
-                `repo-root-repodirectory-unspecified-add`,
-              ],
-              { cwd: testDir },
-              (error) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve();
-                }
-              },
-            );
-            p.stdout?.pipe(process.stdout);
-            p.stderr?.pipe(process.stderr);
-          });
-
-          await makeFileChanges(repoDirectory, "standard");
-
-          // Push the changes
-          await mockCwd(repoDirectory, () =>
-            commitChangesFromRepo({
-              octokit,
-              ...REPO,
-              branch,
-              message: {
-                headline: "Test commit",
-                body: "This is a test commit",
-              },
-              addFromDirectory: path.join(repoDirectory, "nested"),
-              log,
-            }),
-          );
-
-          await waitForGitHubToBeReady();
-
-          await makeSubdirectoryFileChangeAssertions(branch);
-
-          // Expect the OID to be the HEAD commit
-          const oid =
-            (
-              await git.log({
-                fs,
-                dir: repoDirectory,
-                ref: "HEAD",
-                depth: 1,
-              })
-            )[0]?.oid ?? "NO_OID";
-
-          await expectParentHasOid({ branch, oid });
-        });
-
-        it(`filterFiles should correctly filter files`, async () => {
-          const branch = `${TEST_BRANCH_PREFIX}-root-repodirectory-unspecified-filter`;
-          branches.push(branch);
-
-          await fs.promises.mkdir(testDir, { recursive: true });
-          const repoDirectory = path.join(
-            testDir,
+      // Clone the git repo locally using the git cli and child-process
+      await new Promise<void>((resolve, reject) => {
+        const p = execFile(
+          "git",
+          [
+            "clone",
+            process.cwd(),
             `repo-root-repodirectory-unspecified-filter`,
-          );
-
-          // Clone the git repo locally using the git cli and child-process
-          await new Promise<void>((resolve, reject) => {
-            const p = execFile(
-              "git",
-              [
-                "clone",
-                process.cwd(),
-                `repo-root-repodirectory-unspecified-filter`,
-              ],
-              { cwd: testDir },
-              (error) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve();
-                }
-              },
-            );
-            p.stdout?.pipe(process.stdout);
-            p.stderr?.pipe(process.stderr);
-          });
-
-          await makeFileChanges(repoDirectory, "standard");
-
-          // Push the changes
-          await mockCwd(repoDirectory, () =>
-            commitChangesFromRepo({
-              octokit,
-              ...REPO,
-              branch,
-              message: {
-                headline: "Test commit",
-                body: "This is a test commit",
-              },
-              // Only include top-level files
-              filterFiles: (file) => !file.includes("/"),
-              log,
-            }),
-          );
-
-          await waitForGitHubToBeReady();
-
-          await makeFilteredFileChangeAssertions(branch);
-
-          // Expect the OID to be the HEAD commit
-          const oid =
-            (
-              await git.log({
-                fs,
-                dir: repoDirectory,
-                ref: "HEAD",
-                depth: 1,
-              })
-            )[0]?.oid ?? "NO_OID";
-
-          await expectParentHasOid({ branch, oid });
-        });
+          ],
+          { cwd: testDir },
+          (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          },
+        );
+        p.stdout?.pipe(process.stdout);
+        p.stderr?.pipe(process.stderr);
       });
+
+      await makeFileChanges(repoDirectory, "standard");
+
+      // Push the changes
+      await commitChangesFromRepo({
+        octokit,
+        ...REPO,
+        branch,
+        message: {
+          headline: "Test commit",
+          body: "This is a test commit",
+        },
+        cwd: repoDirectory,
+        // Only include top-level files
+        filterFiles: (file) => !file.includes("/"),
+        log,
+      });
+
+      await waitForGitHubToBeReady();
+
+      await makeFilteredFileChangeAssertions(branch);
+
+      // Expect the OID to be the HEAD commit
+      const oid =
+        (
+          await git.log({
+            fs,
+            dir: repoDirectory,
+            ref: "HEAD",
+            depth: 1,
+          })
+        )[0]?.oid ?? "NO_OID";
+
+      await expectParentHasOid({ branch, oid });
     });
 
     describe("when running in repository sub-directory", () => {
-      describe("repoDirectory: unspecified", () => {
-        it(`should correctly commit all changes`, async () => {
-          const branch = `${TEST_BRANCH_PREFIX}-subdir-repodirectory-unspecified`;
-          branches.push(branch);
+      it(`should correctly filter files to sub-directory`, async () => {
+        const branch = `${TEST_BRANCH_PREFIX}-subdir-repodirectory-unspecified-add`;
+        branches.push(branch);
 
-          await fs.promises.mkdir(testDir, { recursive: true });
-          const repoDirectory = path.join(
-            testDir,
-            `repo-subdir-repodirectory-unspecified`,
+        await fs.promises.mkdir(testDir, { recursive: true });
+        const repoDirectory = path.join(
+          testDir,
+          `repo-subdir-repodirectory-unspecified-add`,
+        );
+
+        // Clone the git repo locally using the git cli and child-process
+        await new Promise<void>((resolve, reject) => {
+          const p = execFile(
+            "git",
+            [
+              "clone",
+              process.cwd(),
+              `repo-subdir-repodirectory-unspecified-add`,
+            ],
+            { cwd: testDir },
+            (error) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve();
+              }
+            },
           );
-
-          // Clone the git repo locally using the git cli and child-process
-          await new Promise<void>((resolve, reject) => {
-            const p = execFile(
-              "git",
-              ["clone", process.cwd(), `repo-subdir-repodirectory-unspecified`],
-              { cwd: testDir },
-              (error) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve();
-                }
-              },
-            );
-            p.stdout?.pipe(process.stdout);
-            p.stderr?.pipe(process.stderr);
-          });
-
-          await makeFileChanges(repoDirectory, "standard");
-
-          // Push the changes
-          await mockCwd(path.join(repoDirectory, "nested"), () =>
-            commitChangesFromRepo({
-              octokit,
-              ...REPO,
-              branch,
-              message: {
-                headline: "Test commit",
-                body: "This is a test commit",
-              },
-              log,
-            }),
-          );
-
-          await waitForGitHubToBeReady();
-
-          await makeFileChangeAssertions(branch);
-
-          // Expect the OID to be the HEAD commit
-          const oid =
-            (
-              await git.log({
-                fs,
-                dir: repoDirectory,
-                ref: "HEAD",
-                depth: 1,
-              })
-            )[0]?.oid ?? "NO_OID";
-
-          await expectParentHasOid({ branch, oid });
+          p.stdout?.pipe(process.stdout);
+          p.stderr?.pipe(process.stderr);
         });
 
-        it(`addFromDirectory should correctly filter files`, async () => {
-          const branch = `${TEST_BRANCH_PREFIX}-subdir-repodirectory-unspecified-add`;
-          branches.push(branch);
+        await makeFileChanges(repoDirectory, "standard");
 
-          await fs.promises.mkdir(testDir, { recursive: true });
-          const repoDirectory = path.join(
-            testDir,
-            `repo-subdir-repodirectory-unspecified-add`,
-          );
-
-          // Clone the git repo locally using the git cli and child-process
-          await new Promise<void>((resolve, reject) => {
-            const p = execFile(
-              "git",
-              [
-                "clone",
-                process.cwd(),
-                `repo-subdir-repodirectory-unspecified-add`,
-              ],
-              { cwd: testDir },
-              (error) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve();
-                }
-              },
-            );
-            p.stdout?.pipe(process.stdout);
-            p.stderr?.pipe(process.stderr);
-          });
-
-          await makeFileChanges(repoDirectory, "standard");
-
-          // Push the changes
-          await mockCwd(path.join(repoDirectory, "nested"), () =>
-            commitChangesFromRepo({
-              octokit,
-              ...REPO,
-              branch,
-              message: {
-                headline: "Test commit",
-                body: "This is a test commit",
-              },
-              addFromDirectory: path.join(repoDirectory, "nested"),
-              log,
-            }),
-          );
-
-          await waitForGitHubToBeReady();
-
-          await makeSubdirectoryFileChangeAssertions(branch);
-
-          // Expect the OID to be the HEAD commit
-          const oid =
-            (
-              await git.log({
-                fs,
-                dir: repoDirectory,
-                ref: "HEAD",
-                depth: 1,
-              })
-            )[0]?.oid ?? "NO_OID";
-
-          await expectParentHasOid({ branch, oid });
+        // Push the changes
+        await commitChangesFromRepo({
+          octokit,
+          ...REPO,
+          branch,
+          message: {
+            headline: "Test commit",
+            body: "This is a test commit",
+          },
+          cwd: path.join(repoDirectory, "nested"),
+          log,
         });
 
-        it(`filterFiles should correctly filter files`, async () => {
-          const branch = `${TEST_BRANCH_PREFIX}-subdir-repodirectory-unspecified-filter`;
-          branches.push(branch);
+        await waitForGitHubToBeReady();
 
-          await fs.promises.mkdir(testDir, { recursive: true });
-          const repoDirectory = path.join(
-            testDir,
-            `repo-subdir-repodirectory-unspecified-filter`,
+        await makeSubdirectoryFileChangeAssertions(branch, true);
+
+        // Expect the OID to be the HEAD commit
+        const oid =
+          (
+            await git.log({
+              fs,
+              dir: repoDirectory,
+              ref: "HEAD",
+              depth: 1,
+            })
+          )[0]?.oid ?? "NO_OID";
+
+        await expectParentHasOid({ branch, oid });
+      });
+
+      it(`filterFiles should correctly filter files`, async () => {
+        const branch = `${TEST_BRANCH_PREFIX}-subdir-repodirectory-unspecified-filter`;
+        branches.push(branch);
+
+        await fs.promises.mkdir(testDir, { recursive: true });
+        const repoDirectory = path.join(
+          testDir,
+          `repo-subdir-repodirectory-unspecified-filter`,
+        );
+
+        // Clone the git repo locally using the git cli and child-process
+        await new Promise<void>((resolve, reject) => {
+          const p = execFile(
+            "git",
+            [
+              "clone",
+              process.cwd(),
+              `repo-subdir-repodirectory-unspecified-filter`,
+            ],
+            { cwd: testDir },
+            (error) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve();
+              }
+            },
           );
-
-          // Clone the git repo locally using the git cli and child-process
-          await new Promise<void>((resolve, reject) => {
-            const p = execFile(
-              "git",
-              [
-                "clone",
-                process.cwd(),
-                `repo-subdir-repodirectory-unspecified-filter`,
-              ],
-              { cwd: testDir },
-              (error) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve();
-                }
-              },
-            );
-            p.stdout?.pipe(process.stdout);
-            p.stderr?.pipe(process.stderr);
-          });
-
-          await makeFileChanges(repoDirectory, "standard");
-
-          // Push the changes
-          await mockCwd(path.join(repoDirectory, "nested"), () =>
-            commitChangesFromRepo({
-              octokit,
-              ...REPO,
-              branch,
-              message: {
-                headline: "Test commit",
-                body: "This is a test commit",
-              },
-              // Only include top-level files
-              filterFiles: (file) => !file.includes("/"),
-              log,
-            }),
-          );
-
-          await waitForGitHubToBeReady();
-
-          await makeFilteredFileChangeAssertions(branch);
-
-          // Expect the OID to be the HEAD commit
-          const oid =
-            (
-              await git.log({
-                fs,
-                dir: repoDirectory,
-                ref: "HEAD",
-                depth: 1,
-              })
-            )[0]?.oid ?? "NO_OID";
-
-          await expectParentHasOid({ branch, oid });
+          p.stdout?.pipe(process.stdout);
+          p.stderr?.pipe(process.stderr);
         });
+
+        await makeFileChanges(repoDirectory, "standard");
+
+        // Push the changes
+        await commitChangesFromRepo({
+          octokit,
+          ...REPO,
+          branch,
+          message: {
+            headline: "Test commit",
+            body: "This is a test commit",
+          },
+          cwd: path.join(repoDirectory, "nested"),
+          filterFiles: (file) => file.includes(".txt"),
+          log,
+        });
+
+        await waitForGitHubToBeReady();
+
+        await makeSubdirectoryFileChangeAssertions(branch, false);
+
+        // Expect the OID to be the HEAD commit
+        const oid =
+          (
+            await git.log({
+              fs,
+              dir: repoDirectory,
+              ref: "HEAD",
+              depth: 1,
+            })
+          )[0]?.oid ?? "NO_OID";
+
+        await expectParentHasOid({ branch, oid });
       });
     });
   });

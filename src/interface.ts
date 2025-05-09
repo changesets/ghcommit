@@ -72,13 +72,13 @@ export interface CommitFilesFromDirectoryArgs
    * The directory to consider the root of the repository when calculating
    * file paths
    */
-  workingDirectory?: string;
+  cwd: string;
   /**
-   * The file paths, relative to {@link workingDirectory},
+   * The file paths, relative to {@link cwd},
    * to add or delete from the branch on GitHub.
    */
   fileChanges: {
-    /** File paths, relative to {@link workingDirectory}, to remove from the repo. */
+    /** File paths, relative to {@link cwd}, to remove from the repo. */
     additions?: string[];
     /** File paths, relative to the repository root, to remove from the repo. */
     deletions?: string[];
@@ -86,6 +86,13 @@ export interface CommitFilesFromDirectoryArgs
 }
 
 export interface CommitChangesFromRepoArgs extends CommitFilesBasedArgs {
+  /**
+   * The directory used to find the repository root,
+   * and search for changed files to commit.
+   *
+   * Any files that have been changed outside of this directory will be ignored.
+   */
+  cwd: string;
   /**
    * The base commit to build your changes on-top of.
    *
@@ -105,21 +112,13 @@ export interface CommitChangesFromRepoArgs extends CommitFilesBasedArgs {
     commit: string;
   };
   /**
-   * The root of the repository.
+   * Don't require {@link cwd} to be the root of the repository,
+   * and use it as a starting point to recursively search for the `.git`
+   * directory in parent directories.
    *
-   * When unspecified, the root of the repository will be found by recursively
-   * searching for the `.git` directory from the current working directory.
+   * @default true
    */
-  repoDirectory?: string;
-  /**
-   * The starting directory to recurse from when detecting changed files.
-   *
-   * Useful for monorepos where you want to add files from a specific directory only.
-   *
-   * Defaults to resolved value of {@link repoDirectory},
-   * which will add all changed files in the repository.
-   */
-  addFromDirectory?: string;
+  recursivelyFindRoot?: boolean;
   /**
    * An optional function that can be used to filter which files are included
    * in the commit. True should be returned for files that should be included.
