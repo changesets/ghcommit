@@ -219,7 +219,7 @@ describe("node", () => {
         ...REPO,
         branch,
         base: {
-          tag: "v0.1.0",
+          tag: "v1.4.0",
         },
         ...BASIC_FILE_CONTENTS,
       });
