@@ -286,6 +286,16 @@ await commitFilesFromBuffers({
 });
 ```
 
+## Known Limitations
+
+Due to using the GitHub API to make changes to repository contents,
+there are some things it's not possible to commit,
+and where using the Git CLI is still required.
+
+- Executable files
+- Symbolic Links
+- Submodule changes
+
 ## Other Tools / Alternatives
 
 - [planetscale/ghcommit](https://github.com/planetscale/ghcommit) - Go library for committing to GitHub using graphql
