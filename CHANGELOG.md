@@ -1,5 +1,31 @@
 # @changesets/ghcommit
 
+## 2.0.0
+
+### Major Changes
+
+- [#41](https://github.com/changesets/ghcommit/pull/41) [`295d847`](https://github.com/changesets/ghcommit/commit/295d84746faa73afb64ee2cfead1be53c66ec526) Thanks [@s0](https://github.com/s0)! - Make `repo` argument required,
+  and remove the `repository` argument which was deprecated
+  and previously could be used in its place.
+
+- [#40](https://github.com/changesets/ghcommit/pull/40) [`4117e39`](https://github.com/changesets/ghcommit/commit/4117e398eafae4cdf42837e1240e140dbc6592db) Thanks [@s0](https://github.com/s0)! - Refactor & clean up options for multiple functions
+
+  - For `commitFilesFromDirectory`:
+    - Rename `workingDirectory` to `cwd` for consistency across repos,
+      and utils like `exec`
+    - Make `cwd` a required argument
+  - For `commitChangesFromRepo`:
+    - Merge `repoDirectory` and `addFromDirectory` into a single required argument
+      `cwd`. This folder will now both be used to filter which files are added,
+      and to find the root of the repository.
+    - Introduce `recursivelyFindRoot` option (default: `true`),
+      to optionally search for the root of the repository,
+      by checking for existence of `.git` directory in parent directories,
+      starting from `cwd`.
+
+  This effectively removes all usage of process.cwd() within the package,
+  instead requiring all usage to be very explicit with specifying paths.
+
 ## 1.4.0
 
 ### Minor Changes
