@@ -6,7 +6,7 @@ import {
   CommitFilesFromBuffersArgs,
   CommitFilesResult,
 } from "./interface";
-import { isAbsolute, relative } from "path";
+import { relative, resolve } from "path";
 
 /**
  * @see https://isomorphic-git.org/docs/en/walk#walkerentry-mode
@@ -20,18 +20,20 @@ const FILE_MODES = {
 
 export const commitChangesFromRepo = async ({
   base,
-  repoDirectory,
-  addFromDirectory,
+  cwd: workingDirectory,
+  recursivelyFindRoot = true,
   filterFiles,
   log,
   ...otherArgs
 }: CommitChangesFromRepoArgs): Promise<CommitFilesResult> => {
   const ref = base?.commit ?? "HEAD";
-  const resolvedRepoDirectory =
-    repoDirectory ?? (await git.findRoot({ fs, filepath: process.cwd() }));
+  const cwd = resolve(workingDirectory);
+  const repoRoot = recursivelyFindRoot
+    ? await git.findRoot({ fs, filepath: cwd })
+    : cwd;
   const gitLog = await git.log({
     fs,
-    dir: resolvedRepoDirectory,
+    dir: repoRoot,
     ref,
     depth: 1,
   });
@@ -42,18 +44,12 @@ export const commitChangesFromRepo = async ({
     throw new Error(`Could not determine oid for ${ref}`);
   }
 
-  if (addFromDirectory && !isAbsolute(addFromDirectory)) {
-    throw new Error(
-      `addFromDirectory must be an absolute path, got ${addFromDirectory}`,
-    );
-  }
-
   /**
    * The directory to add files from. This is relative to the repository
    * root, and is used to filter files.
    */
   const relativeStartDirectory =
-    addFromDirectory && relative(resolvedRepoDirectory, addFromDirectory) + "/";
+    cwd === repoRoot ? null : relative(repoRoot, cwd) + "/";
 
   // Determine changed files
   const trees = [git.TREE({ ref: oid }), git.WORKDIR()];
@@ -65,14 +61,14 @@ export const commitChangesFromRepo = async ({
   };
   await git.walk({
     fs,
-    dir: resolvedRepoDirectory,
+    dir: repoRoot,
     trees,
     map: async (filepath, [commit, workdir]) => {
       // Don't include ignored files
       if (
         await git.isIgnored({
           fs,
-          dir: resolvedRepoDirectory,
+          dir: repoRoot,
           filepath,
         })
       ) {

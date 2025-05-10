@@ -8,7 +8,7 @@ import {
 } from "./interface.js";
 
 export const commitFilesFromDirectory = async ({
-  workingDirectory = process.cwd(),
+  cwd,
   fileChanges,
   ...otherArgs
 }: CommitFilesFromDirectoryArgs): Promise<CommitFilesResult> => {
@@ -16,7 +16,7 @@ export const commitFilesFromDirectory = async ({
     (fileChanges.additions || []).map(async (p) => {
       return {
         path: p,
-        contents: await fs.readFile(path.join(workingDirectory, p)),
+        contents: await fs.readFile(path.join(cwd, p)),
       };
     }),
   );

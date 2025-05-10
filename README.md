@@ -83,6 +83,13 @@ In addition to `CommitFilesBasedArgs`, this function has the following arguments
 ```ts
 {
   /**
+   * The directory used to find the repository root,
+   * and search for changed files to commit.
+   *
+   * Any files that have been changed outside of this directory will be ignored.
+   */
+  cwd: string;
+  /**
    * The base commit to build your changes on-top of
    *
    * @default HEAD
@@ -91,21 +98,13 @@ In addition to `CommitFilesBasedArgs`, this function has the following arguments
     commit: string;
   };
   /**
-   * The root of the repository.
+   * Don't require {@link cwd} to be the root of the repository,
+   * and use it as a starting point to recursively search for the `.git`
+   * directory in parent directories.
    *
-   * When unspecified, the root of the repository will be found by recursively
-   * searching for the `.git` directory from the current working directory.
+   * @default true
    */
-  repoDirectory?: string;
-  /**
-   * The starting directory to recurse from when detecting changed files.
-   *
-   * Useful for monorepos where you want to add files from a specific directory only.
-   *
-   * Defaults to resolved value of {@link repoDirectory},
-   * which will add all changed files in the repository.
-   */
-  addFromDirectory?: string;
+  recursivelyFindRoot?: boolean;
   /**
    * An optional function that can be used to filter which files are included
    * in the commit. True should be returned for files that should be included.
@@ -131,6 +130,7 @@ await commitChangesFromRepo({
   ...context.repo,
   branch: "new-branch-to-create",
   message: "[chore] do something",
+  cwd: process.cwd(),
 });
 
 // Commit & push the files from a specific directory
@@ -141,7 +141,7 @@ await commitChangesFromRepo({
   repository: "my-repo",
   branch: "another-new-branch-to-create",
   message: "[chore] do something else\n\nsome more details",
-  repoDirectory: "/tmp/some-repo",
+  cwd: "/tmp/some-repo",
 });
 
 // Commit & push the files from the current directory,
@@ -154,6 +154,7 @@ await commitChangesFromRepo({
     headline: "[chore] do something else",
     body: "some more details",
   },
+  cwd: process.cwd(),
   base: {
     // This will be the original sha from the workflow run,
     // even if we've made commits locally
@@ -178,7 +179,7 @@ In addition to `CommitFilesBasedArgs`, this function has the following arguments
    * The directory to consider the root of the repository when calculating
    * file paths
    */
-  workingDirectory?: string;
+  cwd: string;
   /**
    * The file paths, relative to {@link workingDirectory},
    * to add or delete from the branch on GitHub.
@@ -210,7 +211,7 @@ await commitFilesFromDirectory({
   base: {
     branch: "main",
   },
-  workingDirectory: "foo/bar",
+  cwd: "foo/bar",
   fileChanges: {
     additions: ["package-lock.json", "package.json"],
   },
@@ -226,7 +227,7 @@ await commitFilesFromDirectory({
   base: {
     tag: "v1.0.0",
   },
-  workingDirectory: "some-dir",
+  cwd: "some-dir",
   fileChanges: {
     additions: ["index.html"],
   },
