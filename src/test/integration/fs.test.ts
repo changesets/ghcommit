@@ -37,7 +37,7 @@ describe("fs", () => {
           headline: "Test commit",
           body: "This is a test commit",
         },
-        workingDirectory: tmpDir,
+        cwd: tmpDir,
         fileChanges: {
           additions: ["foo.txt"],
         },
