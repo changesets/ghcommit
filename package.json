@@ -90,6 +90,7 @@
     "access": "public"
   },
   "dependencies": {
-    "isomorphic-git": "^1.27.1"
+    "isomorphic-git": "^1.27.1",
+    "queue": "^6.0.0"
   }
 }

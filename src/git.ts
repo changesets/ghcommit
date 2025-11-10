@@ -11,12 +11,22 @@ import { relative, resolve } from "path";
 /**
  * @see https://isomorphic-git.org/docs/en/walk#walkerentry-mode
  */
-const FILE_MODES = {
+const GIT_FILE_MODES = {
   directory: 0o40000,
   file: 0o100644,
   executableFile: 0o100755,
   symlink: 0o120000,
 } as const;
+
+/**
+ * Convert git numeric mode to string mode for GitHub API
+ * Returns the octal representation as a string (e.g., "100644", "100755")
+ */
+const convertGitModeToApiMode = (mode: number): string => {
+  // Convert the numeric mode to its octal string representation
+  // Git modes are stored as octal numbers, so we convert to octal string
+  return mode.toString(8);
+};
 
 export const commitChangesFromRepo = async ({
   base,
@@ -74,23 +84,39 @@ export const commitChangesFromRepo = async ({
       ) {
         return null;
       }
-      if (
-        (await commit?.mode()) === FILE_MODES.symlink ||
-        (await workdir?.mode()) === FILE_MODES.symlink
-      ) {
-        throw new Error(
-          `Unexpected symlink at ${filepath}, GitHub API only supports files and directories. You may need to add this file to .gitignore`,
-        );
+
+      // Handle symlinks specially - oid() can fail for broken symlinks
+      const workdirMode = await workdir?.mode();
+      const commitMode = await commit?.mode();
+      const isWorkdirSymlink = workdirMode === GIT_FILE_MODES.symlink;
+      const isCommitSymlink = commitMode === GIT_FILE_MODES.symlink;
+
+      let prevOid: string | undefined;
+      let currentOid: string | undefined;
+
+      // For symlinks, compute oid from the link target path
+      if (isCommitSymlink) {
+        prevOid = await commit?.oid().catch(() => undefined);
+      } else {
+        prevOid = await commit?.oid();
       }
-      if ((await workdir?.mode()) === FILE_MODES.executableFile) {
-        throw new Error(
-          `Unexpected executable file at ${filepath}, GitHub API only supports non-executable files and directories. You may need to add this file to .gitignore`,
-        );
+
+      if (isWorkdirSymlink) {
+        // For symlinks, we need to compute the oid ourselves since isomorphic-git
+        // can fail for broken symlinks. We'll skip the oid check and always include the file.
+        currentOid = undefined;
+      } else {
+        currentOid = await workdir?.oid();
       }
-      const prevOid = await commit?.oid();
-      const currentOid = await workdir?.oid();
+
       // Don't include files that haven't changed, and exist in both trees
-      if (prevOid === currentOid && !commit === !workdir) {
+      // Skip this check for symlinks since oid computation can fail
+      if (
+        !isWorkdirSymlink &&
+        !isCommitSymlink &&
+        prevOid === currentOid &&
+        !commit === !workdir
+      ) {
         return null;
       }
       // Iterate through anything that may be a directory in either the
@@ -119,13 +145,40 @@ export const commitChangesFromRepo = async ({
         return null;
       } else {
         // File was added / updated
-        const arr = await workdir.content();
-        if (!arr) {
-          throw new Error(`Could not determine content of file ${filepath}`);
+        const fileMode = await workdir.mode();
+        const isSymlink = fileMode === GIT_FILE_MODES.symlink;
+
+        let contents: Buffer;
+        if (isSymlink) {
+          // For symlinks, read the link target path using the filesystem
+          // isomorphic-git's content() returns null for symlinks
+          const symlinkPath = resolve(repoRoot, filepath);
+          const linkTarget = await fs.readlink(symlinkPath);
+
+          // Check if symlink target exists (resolve relative to symlink's directory)
+          const { dirname } = await import("path");
+          const targetPath = resolve(dirname(symlinkPath), linkTarget);
+          try {
+            await fs.access(targetPath);
+          } catch {
+            throw new Error(
+              `Broken symlink detected: ${filepath} points to non-existent target ${linkTarget}`,
+            );
+          }
+
+          contents = Buffer.from(linkTarget, "utf-8");
+        } else {
+          const arr = await workdir.content();
+          if (!arr) {
+            throw new Error(`Could not determine content of file ${filepath}`);
+          }
+          contents = Buffer.from(arr);
         }
+
         additions.push({
           path: filepath,
-          contents: Buffer.from(arr),
+          contents,
+          mode: convertGitModeToApiMode(fileMode ?? GIT_FILE_MODES.file),
         });
       }
       return true;

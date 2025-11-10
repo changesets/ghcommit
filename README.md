@@ -2,7 +2,7 @@
 
 [![View on NPM](https://badgen.net/npm/v/@changesets/ghcommit)](https://www.npmjs.com/package/@changesets/ghcommit)
 
-NPM / TypeScript package to commit changes GitHub repositories using the GraphQL API.
+NPM / TypeScript package to commit changes to GitHub repositories using the GitHub API.
 
 ## Why?
 
@@ -37,12 +37,20 @@ pnpm install @changesets/ghcommit
 
 ### Usage in github actions
 
-All functions in this library that interact with the GitHub API require an octokit client that can execute GraphQL. If you are writing code that is designed to be run from within a GitHub Action, this can be done using the `@actions.github` library:
+All functions in this library that interact with the GitHub API require an octokit client that can execute both GraphQL queries and REST API requests. If you are writing code that is designed to be run from within a GitHub Action, this can be done using the `@actions/github` library:
 
 ```ts
 import { getOctokit } from "@actions/github";
 
 const octokit = getOctokit(process.env.GITHUB_TOKEN);
+```
+
+Alternatively, you can use `@octokit/core` directly:
+
+```ts
+import { Octokit } from "@octokit/core";
+
+const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 ```
 
 ### Importing specific modules
@@ -253,6 +261,11 @@ In addition to `CommitFilesBasedArgs`, this function has the following arguments
     additions?: Array<{
       path: string;
       contents: Buffer;
+      /**
+       * Optional file mode. Defaults to '100644' (normal file).
+       * Can be any valid git file mode string (e.g., '100755' for executable).
+       */
+      mode?: string;
     }>;
     deletions?: string[];
   };
@@ -264,6 +277,7 @@ Example:
 ```ts
 import { context, getOctokit } from "@actions/github";
 import { commitFilesFromBuffers } from "@changesets/ghcommit/node";
+import { FileModes } from "@changesets/ghcommit";
 
 const octokit = getOctokit(process.env.GITHUB_TOKEN);
 
@@ -282,6 +296,11 @@ await commitFilesFromBuffers({
         path: "hello/world.txt",
         contents: Buffer.alloc(1024, "Hello, world!"),
       },
+      {
+        path: "scripts/run.sh",
+        contents: Buffer.from("#!/bin/bash\necho 'Hello!'"),
+        mode: FileModes.executableFile, // '100755'
+      },
     ],
   },
 });
@@ -290,12 +309,38 @@ await commitFilesFromBuffers({
 ## Known Limitations
 
 Due to using the GitHub API to make changes to repository contents,
-there are some things it's not possible to commit,
-and where using the Git CLI is still required.
+there are some things that may not work as expected:
 
-- Executable files
-- Symbolic Links
-- Submodule changes
+- Submodule changes (gitlinks with mode `160000`) - while the mode is supported, submodule-specific behavior may not work correctly
+
+### File Mode Support
+
+This library supports any git file mode. Common modes include:
+
+- `100644` - Normal file (default)
+- `100755` - Executable file
+- `120000` - Symbolic link
+- `040000` - Directory (subdirectory)
+- `160000` - Submodule (gitlink)
+
+**Automatic detection:**
+
+- When using `commitChangesFromRepo`, file modes are automatically detected from the git working directory.
+- When using `commitFilesFromDirectory`, file modes are automatically detected from the filesystem (based on execute bits).
+- When using `commitFilesFromBuffers`, you can explicitly specify any file mode string.
+
+```ts
+import { FileModes } from "@changesets/ghcommit";
+
+// Convenience constants:
+FileModes.file; // '100644' - Normal file (default)
+FileModes.executableFile; // '100755' - Executable file
+FileModes.symlink; // '120000' - Symbolic link
+
+// Or use any git mode string directly:
+{ path: "script.sh", contents: buffer, mode: "100755" }
+{ path: "custom", contents: buffer, mode: "100644" }
+```
 
 ## Other Tools / Alternatives
 

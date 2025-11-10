@@ -1,5 +1,6 @@
 export type GitHubClient = {
   graphql: <T>(query: string, variables: any) => Promise<T>;
+  request?: <T>(route: string, options?: any) => Promise<{ data: T }>;
 };
 
 import type {

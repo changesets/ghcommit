@@ -8,9 +8,10 @@ export const commitFilesFromBuffers = async ({
   return commitFilesFromBase64({
     ...otherArgs,
     fileChanges: {
-      additions: fileChanges.additions?.map(({ path, contents }) => ({
+      additions: fileChanges.additions?.map(({ path, contents, mode }) => ({
         path,
         contents: contents.toString("base64"),
+        mode,
       })),
       deletions: fileChanges.deletions?.map((path) => ({ path })),
     },

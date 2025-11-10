@@ -1,19 +1,38 @@
 import {
-  createCommitOnBranchQuery,
   createRefMutation,
   getRepositoryMetadata,
   updateRefMutation,
 } from "./github/graphql/queries.js";
-import type {
-  CreateCommitOnBranchMutationVariables,
-  GetRepositoryMetadataQuery,
-} from "./github/graphql/generated/operations.js";
+import type { GetRepositoryMetadataQuery } from "./github/graphql/generated/operations.js";
 import {
   CommitFilesFromBase64Args,
   CommitFilesResult,
   GitBase,
+  FileModes,
 } from "./interface.js";
 import { CommitMessage } from "./github/graphql/generated/types.js";
+import { isUtf8 } from "buffer";
+import Queue from "queue";
+
+// Types for GitHub Git Data API responses
+interface GitCommitResponse {
+  sha: string;
+  tree: {
+    sha: string;
+  };
+}
+
+interface GitBlobResponse {
+  sha: string;
+}
+
+interface GitTreeResponse {
+  sha: string;
+}
+
+interface GitNewCommitResponse {
+  sha: string;
+}
 
 const getBaseRef = (base: GitBase): string => {
   if ("branch" in base) {
@@ -164,21 +183,157 @@ export const commitFilesFromBase64 = async ({
         }
       : message;
 
-  await log?.debug(`Creating commit on branch ${branch}`);
-  const createCommitMutation: CreateCommitOnBranchMutationVariables = {
-    input: {
-      branch: {
-        id: refId,
-      },
-      expectedHeadOid: baseOid,
-      message: finalMessage,
-      fileChanges,
-    },
-  };
-  log?.debug(JSON.stringify(createCommitMutation, null, 2));
+  const commitMessageStr = finalMessage.body
+    ? `${finalMessage.headline}\n\n${finalMessage.body}`
+    : finalMessage.headline;
 
-  const result = await createCommitOnBranchQuery(octokit, createCommitMutation);
+  await log?.debug(`Creating commit on branch ${branch} using Git Data API`);
+
+  // Check if the octokit instance supports REST API calls
+  if (!octokit.request) {
+    throw new Error(
+      "The provided octokit instance does not support REST API calls (missing request method). " +
+        "Please provide an Octokit instance that supports both GraphQL and REST API, such as @octokit/core.",
+    );
+  }
+
+  // Step 1: Get the base tree from the parent commit
+  log?.debug(`Getting base commit ${baseOid}`);
+  const baseCommit = await octokit.request<GitCommitResponse>(
+    "GET /repos/{owner}/{repo}/git/commits/{commit_sha}",
+    {
+      owner,
+      repo,
+      commit_sha: baseOid,
+    },
+  );
+  const baseTreeSha = baseCommit.data.tree.sha;
+  log?.debug(`Base tree SHA: ${baseTreeSha}`);
+
+  // Step 2: Create blobs for each file addition
+  const treeItems: Array<
+    {
+      path: string;
+      mode: string;
+      type: "blob" | "tree" | "commit";
+    } & (
+      | {
+          sha: string | null;
+        }
+      | {
+          content: string;
+        }
+    )
+  > = [];
+
+  // Add file additions
+  if (fileChanges.additions) {
+    // Use a queue as we might have to upload a bunch of blobs concurrently
+    const additionsProcessor = new Queue({
+      concurrency: 5,
+    });
+    additionsProcessor.push(
+      ...fileChanges.additions.map((addition) => {
+        return async () => {
+          if (isUtf8(Buffer.from(addition.contents, "base64"))) {
+            log?.debug(`Using utf8 content directly for ${addition.path}`);
+
+            treeItems.push({
+              path: addition.path,
+              mode: addition.mode || FileModes.file,
+              type: "blob",
+              content: Buffer.from(addition.contents, "base64").toString(
+                "utf-8",
+              ),
+            });
+          } else {
+            log?.debug(`Creating blob for non-utf8 file at ${addition.path}`);
+            const blobResponse = await octokit.request!<GitBlobResponse>(
+              "POST /repos/{owner}/{repo}/git/blobs",
+              {
+                owner,
+                repo,
+                content: addition.contents,
+                encoding: "base64",
+              },
+            );
+
+            const mode = addition.mode || FileModes.file;
+            log?.debug(
+              `Created blob ${blobResponse.data.sha} for ${addition.path} with mode ${mode}`,
+            );
+
+            treeItems.push({
+              path: addition.path,
+              mode: mode,
+              type: "blob",
+              sha: blobResponse.data.sha,
+            });
+          }
+        };
+      }),
+    );
+    await new Promise<void>((resolve, reject) => additionsProcessor.start((err) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve();
+      }
+    }));
+  }
+
+  // Add file deletions (set sha to null)
+  if (fileChanges.deletions) {
+    for (const deletion of fileChanges.deletions) {
+      log?.debug(`Marking ${deletion.path} for deletion`);
+      treeItems.push({
+        path: deletion.path,
+        mode: "100644",
+        type: "blob",
+        sha: null,
+      });
+    }
+  }
+
+  // Step 3: Create new tree with the changes
+  log?.debug(`Creating tree with ${treeItems.length} items`);
+  const newTree = await octokit.request<GitTreeResponse>(
+    "POST /repos/{owner}/{repo}/git/trees",
+    {
+      owner,
+      repo,
+      base_tree: baseTreeSha,
+      tree: treeItems,
+    },
+  );
+  log?.debug(`Created tree ${newTree.data.sha}`);
+
+  // Step 4: Create the commit
+  log?.debug(`Creating commit with message: ${finalMessage.headline}`);
+  const newCommit = await octokit.request<GitNewCommitResponse>(
+    "POST /repos/{owner}/{repo}/git/commits",
+    {
+      owner,
+      repo,
+      message: commitMessageStr,
+      tree: newTree.data.sha,
+      parents: [baseOid],
+    },
+  );
+  log?.debug(`Created commit ${newCommit.data.sha}`);
+
+  // Step 5: Update the branch ref to point to the new commit
+  log?.debug(`Updating ref ${targetRef} to ${newCommit.data.sha}`);
+  await octokit.request<void>("PATCH /repos/{owner}/{repo}/git/refs/{ref}", {
+    owner,
+    repo,
+    ref: `heads/${branch}`,
+    sha: newCommit.data.sha,
+    force: false,
+  });
+  log?.debug(`Updated ref successfully`);
+
   return {
-    refId: result.createCommitOnBranch?.ref?.id ?? null,
+    refId: refId,
   };
 };

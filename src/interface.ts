@@ -1,7 +1,4 @@
-import type {
-  CommitMessage,
-  FileChanges,
-} from "./github/graphql/generated/types.js";
+import type { CommitMessage } from "./github/graphql/generated/types.js";
 import type { GitHubClient } from "./github/graphql/queries.js";
 
 import type { Logger } from "./logging.js";
@@ -45,10 +42,41 @@ export interface CommitFilesSharedArgsWithBase extends CommitFilesBasedArgs {
   base: GitBase;
 }
 
+/**
+ * File changes with support for file modes.
+ * This is used instead of the GraphQL FileChanges type to support file modes.
+ */
+export interface FileChangesWithModes {
+  additions?: Array<{
+    path: string;
+    contents: string; // base64 encoded
+    /**
+     * The file mode. Defaults to '100644' (normal file).
+     * Use '100755' for executable files.
+     * Can be any valid git file mode string.
+     */
+    mode?: string;
+  }>;
+  deletions?: Array<{
+    path: string;
+  }>;
+}
+
 export interface CommitFilesFromBase64Args
   extends CommitFilesSharedArgsWithBase {
-  fileChanges: FileChanges;
+  fileChanges: FileChangesWithModes;
 }
+
+/**
+ * Git file modes
+ */
+export const FileModes = {
+  file: "100644",
+  executableFile: "100755",
+  symlink: "120000",
+} as const;
+
+export type FileMode = (typeof FileModes)[keyof typeof FileModes];
 
 export interface CommitFilesFromBuffersArgs
   extends CommitFilesSharedArgsWithBase {
@@ -59,6 +87,12 @@ export interface CommitFilesFromBuffersArgs
     additions?: Array<{
       path: string;
       contents: Buffer;
+      /**
+       * The file mode. Defaults to '100644' (normal file).
+       * Use '100755' for executable files.
+       * Can be any valid git file mode string.
+       */
+      mode?: string;
     }>;
     deletions?: string[];
   };
@@ -76,8 +110,11 @@ export interface CommitFilesFromDirectoryArgs
    * to add or delete from the branch on GitHub.
    */
   fileChanges: {
-    /** File paths, relative to {@link cwd}, to remove from the repo. */
-    additions?: string[];
+    /**
+     * File paths, relative to {@link cwd}, to add to the repo.
+     * Can be strings (file paths) or objects with path and mode.
+     */
+    additions?: Array<string | { path: string; mode?: string }>;
     /** File paths, relative to the repository root, to remove from the repo. */
     deletions?: string[];
   };

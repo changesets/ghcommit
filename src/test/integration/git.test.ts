@@ -324,8 +324,8 @@ describe("git", () => {
       });
     }
 
-    describe(`should throw appropriate error when symlink is present`, () => {
-      it(`and file does not exist`, async () => {
+    describe(`should support symlinks`, () => {
+      it(`should throw error when symlink target does not exist`, async () => {
         const branch = `${TEST_BRANCH_PREFIX}-invalid-symlink-error`;
         branches.push(branch);
 
@@ -352,8 +352,8 @@ describe("git", () => {
 
         await makeFileChanges(repoDirectory, "with-included-invalid-symlink");
 
-        // Push the changes
-        await expect(() =>
+        // Push the changes - broken symlinks should throw an error
+        await expect(
           commitChangesFromRepo({
             octokit,
             ...REPO,
@@ -365,12 +365,10 @@ describe("git", () => {
             cwd: repoDirectory,
             log,
           }),
-        ).rejects.toThrow(
-          "Unexpected symlink at some-dir/nested, GitHub API only supports files and directories. You may need to add this file to .gitignore",
-        );
+        ).rejects.toThrow(/Broken symlink detected/);
       });
 
-      it(`and file exists`, async () => {
+      it(`when symlink target exists`, async () => {
         const branch = `${TEST_BRANCH_PREFIX}-valid-symlink-error`;
         branches.push(branch);
 
@@ -397,26 +395,40 @@ describe("git", () => {
 
         await makeFileChanges(repoDirectory, "with-included-valid-symlink");
 
-        // Push the changes
-        await expect(() =>
-          commitChangesFromRepo({
-            octokit,
+        // Push the changes - symlinks are now supported
+        const result = await commitChangesFromRepo({
+          octokit,
+          ...REPO,
+          branch,
+          message: {
+            headline: "Test commit",
+            body: "This is a test commit",
+          },
+          cwd: repoDirectory,
+          log,
+        });
+
+        expect(result.refId).toBeTruthy();
+
+        await waitForGitHubToBeReady();
+
+        // Verify the commit was created successfully with the symlink
+        const ref = (
+          await getRefTreeQuery(octokit, {
             ...REPO,
-            branch,
-            message: {
-              headline: "Test commit",
-              body: "This is a test commit",
-            },
-            cwd: repoDirectory,
-            log,
-          }),
-        ).rejects.toThrow(
-          "Unexpected symlink at some-dir/nested, GitHub API only supports files and directories. You may need to add this file to .gitignore",
-        );
+            ref: `refs/heads/${branch}`,
+            path: "new-file.txt",
+          })
+        ).repository?.ref?.target;
+
+        expect(ref).toBeTruthy();
+        if (ref && "file" in ref) {
+          expect(ref.file?.oid).toBeTruthy();
+        }
       });
     });
 
-    it(`should throw appropriate error when executable file is present`, async () => {
+    it(`should support executable files`, async () => {
       const branch = `${TEST_BRANCH_PREFIX}-executable-file`;
       branches.push(branch);
 
@@ -443,22 +455,36 @@ describe("git", () => {
 
       await makeFileChanges(repoDirectory, "with-executable-file");
 
-      // Push the changes
-      await expect(() =>
-        commitChangesFromRepo({
-          octokit,
+      // Push the changes - executable files are now supported
+      const result = await commitChangesFromRepo({
+        octokit,
+        ...REPO,
+        branch,
+        message: {
+          headline: "Test commit",
+          body: "This is a test commit",
+        },
+        cwd: repoDirectory,
+        log,
+      });
+
+      expect(result.refId).toBeTruthy();
+
+      await waitForGitHubToBeReady();
+
+      // Verify the commit was created successfully with the executable file
+      const ref = (
+        await getRefTreeQuery(octokit, {
           ...REPO,
-          branch,
-          message: {
-            headline: "Test commit",
-            body: "This is a test commit",
-          },
-          cwd: repoDirectory,
-          log,
-        }),
-      ).rejects.toThrow(
-        "Unexpected executable file at executable-file.sh, GitHub API only supports non-executable files and directories. You may need to add this file to .gitignore",
-      );
+          ref: `refs/heads/${branch}`,
+          path: "new-file.txt",
+        })
+      ).repository?.ref?.target;
+
+      expect(ref).toBeTruthy();
+      if (ref && "file" in ref) {
+        expect(ref.file?.oid).toBeTruthy();
+      }
     });
 
     it("should correctly be able to base changes off specific commit", async () => {
