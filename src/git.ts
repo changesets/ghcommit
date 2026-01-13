@@ -74,6 +74,14 @@ export const commitChangesFromRepo = async ({
       ) {
         return null;
       }
+    
+      const prevOid = await commit?.oid();
+      const currentOid = await workdir?.oid();
+      // Don't include files that haven't changed, and exist in both trees
+      if (prevOid === currentOid && !commit === !workdir) {
+        return null;
+      }
+      
       if (
         (await commit?.mode()) === FILE_MODES.symlink ||
         (await workdir?.mode()) === FILE_MODES.symlink
@@ -87,12 +95,7 @@ export const commitChangesFromRepo = async ({
           `Unexpected executable file at ${filepath}, GitHub API only supports non-executable files and directories. You may need to add this file to .gitignore`,
         );
       }
-      const prevOid = await commit?.oid();
-      const currentOid = await workdir?.oid();
-      // Don't include files that haven't changed, and exist in both trees
-      if (prevOid === currentOid && !commit === !workdir) {
-        return null;
-      }
+
       // Iterate through anything that may be a directory in either the
       // current commit or the working directory
       if (
