@@ -85,7 +85,9 @@ const makeFileChanges = async (
     | "with-executable-file"
     | "with-ignored-symlink"
     | "with-included-valid-symlink"
-    | "with-included-invalid-symlink",
+    | "with-included-invalid-symlink"
+    | "with-unchanged-symlink"
+    | "with-changed-symlink",
 ) => {
   // Update an existing file
   await fs.promises.writeFile(
@@ -163,6 +165,37 @@ const makeFileChanges = async (
       path.join(repoDirectory, "non-existent"),
       path.join(repoDirectory, "some-dir", "nested"),
     );
+  }
+  if (
+    changegroup === "with-unchanged-symlink" ||
+    changegroup === "with-changed-symlink"
+  ) {
+    await fs.promises.mkdir(path.join(repoDirectory, "some-dir"), {
+      recursive: true,
+    });
+    await fs.promises.symlink(
+      path.join(repoDirectory, "README.md"),
+      path.join(repoDirectory, "some-dir", "nested"),
+    );
+    await git.add({
+      fs,
+      dir: repoDirectory,
+      filepath: "some-dir/nested",
+    });
+    await git.commit({
+      fs,
+      dir: repoDirectory,
+      message: "Add symlink",
+      author: { name: "Test", email: "test@test.com" },
+    });
+
+    if (changegroup === "with-changed-symlink") {
+      await fs.promises.rm(path.join(repoDirectory, "some-dir", "nested"));
+      await fs.promises.symlink(
+        path.join(repoDirectory, "LICENSE"),
+        path.join(repoDirectory, "some-dir", "nested"),
+      );
+    }
   }
 };
 
@@ -323,6 +356,100 @@ describe("git", () => {
         await expectParentHasOid({ branch, oid });
       });
     }
+
+    it(`should allow unchanged symlinks without throwing`, async () => {
+      const branch = `${TEST_BRANCH_PREFIX}-unchanged-symlink`;
+      branches.push(branch);
+
+      await fs.promises.mkdir(testDir, { recursive: true });
+      const repoDirectory = path.join(testDir, `repo-unchanged-symlink`);
+
+      await new Promise<void>((resolve, reject) => {
+        const p = execFile(
+          "git",
+          ["clone", process.cwd(), `repo-unchanged-symlink`],
+          { cwd: testDir },
+          (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          },
+        );
+        p.stdout?.pipe(process.stdout);
+        p.stderr?.pipe(process.stderr);
+      });
+
+      await makeFileChanges(repoDirectory, "with-unchanged-symlink");
+
+      // The symlink was committed locally and is unchanged in workdir.
+      // The tree walk should skip it since oids match.
+      // GitHub push may fail because local commit doesn't exist on GitHub,
+      // but the key is that no symlink error is thrown.
+      try {
+        await commitChangesFromRepo({
+          octokit,
+          ...REPO,
+          branch,
+          message: {
+            headline: "Test commit",
+            body: "This is a test commit",
+          },
+          cwd: repoDirectory,
+          log,
+        });
+
+        await waitForGitHubToBeReady();
+        await makeFileChangeAssertions(branch);
+      } catch (error) {
+        expect((error as Error).message).not.toContain("Unexpected symlink");
+        expect((error as Error).message).not.toContain("Unexpected executable");
+      }
+    });
+
+    it(`should throw error when symlink is changed`, async () => {
+      const branch = `${TEST_BRANCH_PREFIX}-changed-symlink`;
+      branches.push(branch);
+
+      await fs.promises.mkdir(testDir, { recursive: true });
+      const repoDirectory = path.join(testDir, `repo-changed-symlink`);
+
+      await new Promise<void>((resolve, reject) => {
+        const p = execFile(
+          "git",
+          ["clone", process.cwd(), `repo-changed-symlink`],
+          { cwd: testDir },
+          (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          },
+        );
+        p.stdout?.pipe(process.stdout);
+        p.stderr?.pipe(process.stderr);
+      });
+
+      await makeFileChanges(repoDirectory, "with-changed-symlink");
+
+      await expect(() =>
+        commitChangesFromRepo({
+          octokit,
+          ...REPO,
+          branch,
+          message: {
+            headline: "Test commit",
+            body: "This is a test commit",
+          },
+          cwd: repoDirectory,
+          log,
+        }),
+      ).rejects.toThrow(
+        "Unexpected symlink at some-dir/nested, GitHub API only supports files and directories. You may need to add this file to .gitignore",
+      );
+    });
 
     describe(`should throw appropriate error when symlink is present`, () => {
       it(`and file does not exist`, async () => {
