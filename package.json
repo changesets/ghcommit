@@ -91,5 +91,6 @@
   },
   "dependencies": {
     "isomorphic-git": "^1.36.2"
-  }
+  },
+  "prettier": {}
 }

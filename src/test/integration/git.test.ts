@@ -177,6 +177,22 @@ const makeFileChanges = async (
       path.join(repoDirectory, "README.md"),
       path.join(repoDirectory, "some-dir", "nested"),
     );
+    await new Promise<void>((resolve) => {
+      execFile(
+        "git",
+        ["config", "user.email", "test@test.com"],
+        { cwd: repoDirectory },
+        () => resolve(),
+      );
+    });
+    await new Promise<void>((resolve) => {
+      execFile(
+        "git",
+        ["config", "user.name", "Test"],
+        { cwd: repoDirectory },
+        () => resolve(),
+      );
+    });
     await git.add({
       fs,
       dir: repoDirectory,
