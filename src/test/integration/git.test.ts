@@ -404,29 +404,20 @@ describe("git", () => {
 
       await makeFileChanges(repoDirectory, "with-unchanged-symlink");
 
-      // The symlink was committed locally and is unchanged in workdir.
-      // The tree walk should skip it since oids match.
-      // GitHub push may fail because local commit doesn't exist on GitHub,
-      // but the key is that no symlink error is thrown.
-      try {
-        await commitChangesFromRepo({
-          octokit,
-          ...REPO,
-          branch,
-          message: {
-            headline: "Test commit",
-            body: "This is a test commit",
-          },
-          cwd: repoDirectory,
-          log,
-        });
+      await commitChangesFromRepo({
+        octokit,
+        ...REPO,
+        branch,
+        message: {
+          headline: "Test commit",
+          body: "This is a test commit",
+        },
+        cwd: repoDirectory,
+        log,
+      });
 
-        await waitForGitHubToBeReady();
-        await makeFileChangeAssertions(branch);
-      } catch (error) {
-        expect((error as Error).message).not.toContain("Unexpected symlink");
-        expect((error as Error).message).not.toContain("Unexpected executable");
-      }
+      await waitForGitHubToBeReady();
+      await makeFileChangeAssertions(branch);
     });
 
     it(`should throw error when symlink is changed`, async () => {
