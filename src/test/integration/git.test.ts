@@ -177,21 +177,17 @@ const makeFileChanges = async (
       path.join(repoDirectory, "README.md"),
       path.join(repoDirectory, "some-dir", "nested"),
     );
-    await new Promise<void>((resolve) => {
-      execFile(
-        "git",
-        ["config", "user.email", "test@test.com"],
-        { cwd: repoDirectory },
-        () => resolve(),
-      );
+    await git.setConfig({
+      fs,
+      dir: repoDirectory,
+      path: "user.email",
+      value: "test@test.com",
     });
-    await new Promise<void>((resolve) => {
-      execFile(
-        "git",
-        ["config", "user.name", "Test"],
-        { cwd: repoDirectory },
-        () => resolve(),
-      );
+    await git.setConfig({
+      fs,
+      dir: repoDirectory,
+      path: "user.name",
+      value: "Test",
     });
     await git.add({
       fs,
@@ -205,7 +201,7 @@ const makeFileChanges = async (
       author: { name: "Test", email: "test@test.com" },
     });
     // In detached HEAD state, isomorphic-git doesn't update HEAD after commit.
-    // Use writeRef to update HEAD to point to the new commit.
+    // Use writeRef to update HEAD to point to the new commit (until https://github.com/changesets/ghcommit/pull/46 is merged)
     await git.writeRef({
       fs,
       dir: repoDirectory,
