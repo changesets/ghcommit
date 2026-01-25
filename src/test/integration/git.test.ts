@@ -198,11 +198,20 @@ const makeFileChanges = async (
       dir: repoDirectory,
       filepath: "some-dir/nested",
     });
-    await git.commit({
+    const newCommit = await git.commit({
       fs,
       dir: repoDirectory,
       message: "Add symlink",
       author: { name: "Test", email: "test@test.com" },
+    });
+    // In detached HEAD state, isomorphic-git doesn't update HEAD after commit.
+    // Use writeRef to update HEAD to point to the new commit.
+    await git.writeRef({
+      fs,
+      dir: repoDirectory,
+      ref: "HEAD",
+      value: newCommit,
+      force: true,
     });
 
     if (changegroup === "with-changed-symlink") {
