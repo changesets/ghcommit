@@ -90,7 +90,7 @@
     "access": "public"
   },
   "dependencies": {
-    "isomorphic-git": "^1.36.2"
+    "isomorphic-git": "^1.36.3"
   },
   "prettier": {}
 }

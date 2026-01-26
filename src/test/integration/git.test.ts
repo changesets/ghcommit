@@ -195,20 +195,11 @@ async function makeFileChanges(
       dir: repoDirectory,
       filepath: "some-dir/nested",
     });
-    const newCommit = await git.commit({
+    await git.commit({
       fs,
       dir: repoDirectory,
       message: "Add symlink",
       author: { name: "Test", email: "test@test.com" },
-    });
-    // In detached HEAD state, isomorphic-git doesn't update HEAD after commit.
-    // Use writeRef to update HEAD to point to the new commit (until https://github.com/changesets/ghcommit/pull/46 is merged)
-    await git.writeRef({
-      fs,
-      dir: repoDirectory,
-      ref: "HEAD",
-      value: newCommit,
-      force: true,
     });
 
     // Push the commit with symlink to GitHub so the API can use it as base.
