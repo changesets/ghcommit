@@ -213,10 +213,13 @@ const makeFileChanges = async (
 
     // Push the commit with symlink to GitHub so the API can use it as base.
     // Using native git since isomorphic-git push requires explicit auth setup.
+    // Note: origin points to the local clone source (process.cwd()), not GitHub,
+    // so we push directly to GitHub using the token.
+    const githubUrl = `https://x-access-token:${ENV.GITHUB_TOKEN}@github.com/${REPO.owner}/${REPO.repo}.git`;
     await new Promise<void>((resolve, reject) => {
       const p = execFile(
         "git",
-        ["push", "origin", `HEAD:refs/heads/${branch}`],
+        ["push", githubUrl, `HEAD:refs/heads/${branch}`],
         { cwd: repoDirectory },
         (error) => {
           if (error) {
