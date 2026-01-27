@@ -1,5 +1,11 @@
 # @changesets/ghcommit
 
+## 2.0.1
+
+### Patch Changes
+
+- [#46](https://github.com/changesets/ghcommit/pull/46) [`d12678c`](https://github.com/changesets/ghcommit/commit/d12678cc90c7ba6d1cfe0ad673bb320f0eba0488) Thanks [@Andarist](https://github.com/Andarist)! - Don't error on already committed symlinks and executables that stay untouched
+
 ## 2.0.0
 
 ### Major Changes
