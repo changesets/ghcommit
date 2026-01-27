@@ -78,15 +78,18 @@ const expectParentHasOid = async ({
   expect(commit.parents.nodes).toEqual([{ oid }]);
 };
 
-const makeFileChanges = async (
-  repoDirectory: string,
+async function makeFileChanges(
   changegroup:
     | "standard"
     | "with-executable-file"
     | "with-ignored-symlink"
     | "with-included-valid-symlink"
-    | "with-included-invalid-symlink",
-) => {
+    | "with-included-invalid-symlink"
+    | "with-unchanged-symlink"
+    | "with-changed-symlink",
+  { dir, branch }: { dir: string; branch: string },
+): Promise<void> {
+  const repoDirectory = dir;
   // Update an existing file
   await fs.promises.writeFile(
     path.join(repoDirectory, "LICENSE"),
@@ -164,7 +167,72 @@ const makeFileChanges = async (
       path.join(repoDirectory, "some-dir", "nested"),
     );
   }
-};
+  if (
+    changegroup === "with-unchanged-symlink" ||
+    changegroup === "with-changed-symlink"
+  ) {
+    await fs.promises.mkdir(path.join(repoDirectory, "some-dir"), {
+      recursive: true,
+    });
+    await fs.promises.symlink(
+      path.join(repoDirectory, "README.md"),
+      path.join(repoDirectory, "some-dir", "nested"),
+    );
+    await git.setConfig({
+      fs,
+      dir: repoDirectory,
+      path: "user.email",
+      value: "test@test.com",
+    });
+    await git.setConfig({
+      fs,
+      dir: repoDirectory,
+      path: "user.name",
+      value: "Test",
+    });
+    await git.add({
+      fs,
+      dir: repoDirectory,
+      filepath: "some-dir/nested",
+    });
+    await git.commit({
+      fs,
+      dir: repoDirectory,
+      message: "Add symlink",
+      author: { name: "Test", email: "test@test.com" },
+    });
+
+    // Push the commit with symlink to GitHub so the API can use it as base.
+    // Using native git since isomorphic-git push requires explicit auth setup.
+    // Note: origin points to the local clone source (process.cwd()), not GitHub,
+    // so we push directly to GitHub using the token.
+    const githubUrl = `https://x-access-token:${ENV.GITHUB_TOKEN}@github.com/${REPO.owner}/${REPO.repo}.git`;
+    await new Promise<void>((resolve, reject) => {
+      const p = execFile(
+        "git",
+        ["push", githubUrl, `HEAD:refs/heads/${branch}`],
+        { cwd: repoDirectory },
+        (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        },
+      );
+      p.stdout?.pipe(process.stdout);
+      p.stderr?.pipe(process.stderr);
+    });
+
+    if (changegroup === "with-changed-symlink") {
+      await fs.promises.rm(path.join(repoDirectory, "some-dir", "nested"));
+      await fs.promises.symlink(
+        path.join(repoDirectory, "LICENSE"),
+        path.join(repoDirectory, "some-dir", "nested"),
+      );
+    }
+  }
+}
 
 const makeFileChangeAssertions = async (branch: string) => {
   // Expect the deleted files to not exist
@@ -290,7 +358,7 @@ describe("git", () => {
           p.stderr?.pipe(process.stderr);
         });
 
-        await makeFileChanges(repoDirectory, group);
+        await makeFileChanges(group, { dir: repoDirectory, branch });
 
         // Push the changes
         await commitChangesFromRepo({
@@ -324,6 +392,99 @@ describe("git", () => {
       });
     }
 
+    it(`should allow unchanged symlinks without throwing`, async () => {
+      const branch = `${TEST_BRANCH_PREFIX}-unchanged-symlink`;
+      branches.push(branch);
+
+      await fs.promises.mkdir(testDir, { recursive: true });
+      const repoDirectory = path.join(testDir, `repo-unchanged-symlink`);
+
+      await new Promise<void>((resolve, reject) => {
+        const p = execFile(
+          "git",
+          ["clone", process.cwd(), `repo-unchanged-symlink`],
+          { cwd: testDir },
+          (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          },
+        );
+        p.stdout?.pipe(process.stdout);
+        p.stderr?.pipe(process.stderr);
+      });
+
+      await makeFileChanges("with-unchanged-symlink", {
+        dir: repoDirectory,
+        branch,
+      });
+
+      await waitForGitHubToBeReady();
+
+      await commitChangesFromRepo({
+        octokit,
+        ...REPO,
+        branch,
+        message: {
+          headline: "Test commit",
+          body: "This is a test commit",
+        },
+        cwd: repoDirectory,
+        log,
+      });
+
+      await waitForGitHubToBeReady();
+      await makeFileChangeAssertions(branch);
+    });
+
+    it(`should throw error when symlink is changed`, async () => {
+      const branch = `${TEST_BRANCH_PREFIX}-changed-symlink`;
+      branches.push(branch);
+
+      await fs.promises.mkdir(testDir, { recursive: true });
+      const repoDirectory = path.join(testDir, `repo-changed-symlink`);
+
+      await new Promise<void>((resolve, reject) => {
+        const p = execFile(
+          "git",
+          ["clone", process.cwd(), `repo-changed-symlink`],
+          { cwd: testDir },
+          (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          },
+        );
+        p.stdout?.pipe(process.stdout);
+        p.stderr?.pipe(process.stderr);
+      });
+
+      await makeFileChanges("with-changed-symlink", {
+        dir: repoDirectory,
+        branch,
+      });
+
+      await expect(() =>
+        commitChangesFromRepo({
+          octokit,
+          ...REPO,
+          branch,
+          message: {
+            headline: "Test commit",
+            body: "This is a test commit",
+          },
+          cwd: repoDirectory,
+          log,
+        }),
+      ).rejects.toThrow(
+        "Unexpected symlink at some-dir/nested, GitHub API only supports files and directories. You may need to add this file to .gitignore",
+      );
+    });
+
     describe(`should throw appropriate error when symlink is present`, () => {
       it(`and file does not exist`, async () => {
         const branch = `${TEST_BRANCH_PREFIX}-invalid-symlink-error`;
@@ -350,7 +511,10 @@ describe("git", () => {
           p.stderr?.pipe(process.stderr);
         });
 
-        await makeFileChanges(repoDirectory, "with-included-invalid-symlink");
+        await makeFileChanges("with-included-invalid-symlink", {
+          dir: repoDirectory,
+          branch,
+        });
 
         // Push the changes
         await expect(() =>
@@ -395,7 +559,10 @@ describe("git", () => {
           p.stderr?.pipe(process.stderr);
         });
 
-        await makeFileChanges(repoDirectory, "with-included-valid-symlink");
+        await makeFileChanges("with-included-valid-symlink", {
+          dir: repoDirectory,
+          branch,
+        });
 
         // Push the changes
         await expect(() =>
@@ -441,7 +608,10 @@ describe("git", () => {
         p.stderr?.pipe(process.stderr);
       });
 
-      await makeFileChanges(repoDirectory, "with-executable-file");
+      await makeFileChanges("with-executable-file", {
+        dir: repoDirectory,
+        branch,
+      });
 
       // Push the changes
       await expect(() =>
@@ -486,7 +656,7 @@ describe("git", () => {
         p.stderr?.pipe(process.stderr);
       });
 
-      makeFileChanges(repoDirectory, "standard");
+      makeFileChanges("standard", { dir: repoDirectory, branch });
 
       // Determine the previous commit hash
       const gitLog = await git.log({
@@ -553,7 +723,7 @@ describe("git", () => {
         p.stderr?.pipe(process.stderr);
       });
 
-      await makeFileChanges(repoDirectory, "standard");
+      await makeFileChanges("standard", { dir: repoDirectory, branch });
 
       // Push the changes
       await commitChangesFromRepo({
@@ -621,7 +791,7 @@ describe("git", () => {
           p.stderr?.pipe(process.stderr);
         });
 
-        await makeFileChanges(repoDirectory, "standard");
+        await makeFileChanges("standard", { dir: repoDirectory, branch });
 
         // Push the changes
         await commitChangesFromRepo({
@@ -686,7 +856,7 @@ describe("git", () => {
           p.stderr?.pipe(process.stderr);
         });
 
-        await makeFileChanges(repoDirectory, "standard");
+        await makeFileChanges("standard", { dir: repoDirectory, branch });
 
         // Push the changes
         await commitChangesFromRepo({
