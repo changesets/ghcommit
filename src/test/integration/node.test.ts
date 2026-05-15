@@ -93,6 +93,21 @@ describe("node", () => {
     }
   };
 
+  const createPullRequestForBranch = async (branch: string, title: string) => {
+    const pullRequest = await octokit.rest.pulls.create({
+      ...REPO,
+      title,
+      head: branch,
+      base: "main",
+      body: `CI-created integration test PR for \`${branch}\`.`,
+    });
+
+    expect(pullRequest.data.state).toEqual("open");
+    expect(pullRequest.data.head.ref).toEqual(branch);
+
+    return pullRequest.data.html_url;
+  };
+
   let testTargetCommit: string;
   /**
    * For tests, important that this commit is not an ancestor of TEST_TARGET_COMMIT,
@@ -312,6 +327,13 @@ describe("node", () => {
       });
 
       expect(branchRef.data.object.sha).toEqual(commit.data.sha);
+
+      const pullRequestUrl = await createPullRequestForBranch(
+        branch,
+        `test: REST git API branch ${branch}`,
+      );
+
+      expect(pullRequestUrl).toContain(`/pull/`);
     });
 
     it("can create a commit using the GraphQL commit path", async () => {
@@ -348,6 +370,13 @@ describe("node", () => {
       });
 
       expect(branchRef.data.object.sha).toBeTruthy();
+
+      const pullRequestUrl = await createPullRequestForBranch(
+        branch,
+        `test: GraphQL commit path branch ${branch}`,
+      );
+
+      expect(pullRequestUrl).toContain(`/pull/`);
     });
 
     describe("existing branches", () => {
