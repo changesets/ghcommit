@@ -314,6 +314,42 @@ describe("node", () => {
       expect(branchRef.data.object.sha).toEqual(commit.data.sha);
     });
 
+    it("can create a commit using the GraphQL commit path", async () => {
+      const branch = `${TEST_BRANCH_PREFIX}-graphql-git-${Date.now()}`;
+      const filePath = "graphql-git-api-test.txt";
+
+      await commitFilesFromBuffers({
+        octokit,
+        ...REPO,
+        branch,
+        base: {
+          branch: "main",
+        },
+        message: {
+          headline: "Test GraphQL git commit",
+          body: "Created through commitFilesFromBuffers",
+        },
+        fileChanges: {
+          additions: [
+            {
+              path: filePath,
+              contents: Buffer.from("Hello from the GraphQL commit path!\n"),
+            },
+          ],
+        },
+        log,
+      });
+
+      await waitForGitHubToBeReady();
+
+      const branchRef = await octokit.rest.git.getRef({
+        ...REPO,
+        ref: `heads/${branch}`,
+      });
+
+      expect(branchRef.data.object.sha).toBeTruthy();
+    });
+
     describe("existing branches", () => {
       it("can commit to existing branch when force is true", async () => {
         const branch = `${TEST_BRANCH_PREFIX}-existing-branch-force`;
