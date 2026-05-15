@@ -64,6 +64,9 @@ jobs:
         with:
           skip-cache: true # avoid cache poisoning from this only job with write access, just in case
 
+      - name: Build
+        run: pnpm build
+
       - name: Integration tests
         run: pnpm test:integration
         env:
