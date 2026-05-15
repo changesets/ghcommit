@@ -263,6 +263,57 @@ describe("node", () => {
       });
     });
 
+    it("can create a commit using the REST git API", async () => {
+      const branch = `${TEST_BRANCH_PREFIX}-rest-git-${Date.now()}`;
+      const filePath = "rest-git-api-test.txt";
+
+      const baseRef = await octokit.rest.git.getRef({
+        ...REPO,
+        ref: "heads/main",
+      });
+      const baseOid = baseRef.data.object.sha;
+
+      const baseCommit = await octokit.rest.git.getCommit({
+        ...REPO,
+        commit_sha: baseOid,
+      });
+
+      const tree = await octokit.rest.git.createTree({
+        ...REPO,
+        base_tree: baseCommit.data.tree.sha,
+        tree: [
+          {
+            path: filePath,
+            mode: "100644",
+            type: "blob",
+            content: "Hello from the REST git API!\n",
+          },
+        ],
+      });
+
+      const commit = await octokit.rest.git.createCommit({
+        ...REPO,
+        message: "Test REST git commit",
+        tree: tree.data.sha,
+        parents: [baseOid],
+      });
+
+      await octokit.rest.git.createRef({
+        ...REPO,
+        ref: `refs/heads/${branch}`,
+        sha: commit.data.sha,
+      });
+
+      await waitForGitHubToBeReady();
+
+      const branchRef = await octokit.rest.git.getRef({
+        ...REPO,
+        ref: `heads/${branch}`,
+      });
+
+      expect(branchRef.data.object.sha).toEqual(commit.data.sha);
+    });
+
     describe("existing branches", () => {
       it("can commit to existing branch when force is true", async () => {
         const branch = `${TEST_BRANCH_PREFIX}-existing-branch-force`;
