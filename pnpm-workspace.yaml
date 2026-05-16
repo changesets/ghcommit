@@ -6,8 +6,7 @@ dedupePeers: true
 dedupePeerDependents: true
 minimumReleaseAge: 10080
 shellEmulator: true
-trustPolicy: no-downgrade
 
-trustPolicyExclude:
-  - "chokidar@4.0.3" # exclude for now until we migrate to tsdown
+# temporarily disable for now until we migrate away from jest and tsup
+# trustPolicy: no-downgrade
 
