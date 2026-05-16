@@ -1,0 +1,17 @@
+packages:
+  - packages/*
+  - scripts/*
+
+allowBuilds:
+  esbuild: true
+
+blockExoticSubdeps: true
+dedupePeers: true
+dedupePeerDependents: true
+minimumReleaseAge: 10080
+shellEmulator: true
+trustPolicy: no-downgrade
+
+trustPolicyExclude:
+  - "chokidar@4.0.3" # exclude for now until we migrate to tsdown
+
