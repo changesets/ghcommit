@@ -9,8 +9,9 @@ import {
 } from "./env";
 import { execFile } from "child_process";
 import { getOctokit } from "@actions/github";
-import { commitChangesFromRepo } from "../../git";
-import { getRefTreeQuery } from "../../github/graphql/queries";
+import { afterAll, describe, expect, it, vi } from "vitest";
+import { commitChangesFromRepo } from "../../src/git";
+import { getRefTreeQuery } from "../../src/github/graphql/queries";
 import { deleteBranches, waitForGitHubToBeReady } from "./util";
 import git from "isomorphic-git";
 
@@ -28,7 +29,7 @@ const expectBranchHasFile = async ({
   oid: string | null;
 }) => {
   if (oid === null) {
-    expect(() =>
+    await expect(() =>
       getRefTreeQuery(octokit, {
         ...REPO,
         ref: `refs/heads/${branch}`,
@@ -327,7 +328,7 @@ describe("git", () => {
   const branches: string[] = [];
 
   // Set timeout to 1 minute
-  jest.setTimeout(60 * 1000);
+  vi.setConfig({ testTimeout: 60 * 1000 });
 
   describe("commitChangesFromRepo", () => {
     const testDir = path.join(ROOT_TEMP_DIRECTORY, "commitChangesFromRepo");

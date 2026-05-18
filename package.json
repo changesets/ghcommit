@@ -47,7 +47,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
     "format:fix": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "eslint . --max-warnings 0",
-    "test:integration": "jest --config jest.integration.config.cjs"
+    "test:integration": "vitest -c vitest.integration.config.ts"
   },
   "devDependencies": {
     "@actions/github": "^6.0.0",
@@ -61,29 +61,26 @@
     "@octokit/graphql": "^8.1.1",
     "@octokit/graphql-schema": "^14.56.0",
     "@types/eslint": "^8.56.5",
-    "@types/jest": "^29.5.12",
     "@types/node": "^20.11.24",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
     "dotenv": "^16.4.5",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-jest": "^28.6.0",
     "eslint-plugin-only-warn": "^1.1.0",
-    "jest": "^29.7.0",
     "pino": "^9.3.2",
     "pino-pretty": "^11.2.2",
     "prettier": "^3.3.3",
-    "publint": "^0.3.21",
-    "ts-jest": "^29.2.0",
+    "publint": "^0.3.20",
     "ts-node": "^10.9.2",
     "tsdown": "^0.22.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.5"
   },
   "files": [
     "dist"
   ],
-  "packageManager": "pnpm@11.1.1+sha512.d1fdf5f73c617b64fa1a56a81c3c8dfe0e966e33a6010aa256b517ae77be21d93e05affc0de1a83b0e4f29d569f68b446ae8f068cd7247c0bb3df0fb4d7bdf9a",
+  "packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499",
   "publishConfig": {
     "access": "public"
   },
