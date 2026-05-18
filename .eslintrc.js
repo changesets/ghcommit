@@ -6,7 +6,6 @@ const project = resolve(process.cwd(), "tsconfig.json");
 /** @type {import("eslint").Linter.Config} */
 module.exports = {
   extends: ["eslint:recommended", "prettier"],
-  plugins: ["jest"],
   parser: "@typescript-eslint/parser",
   globals: {
     React: true,
@@ -14,7 +13,6 @@ module.exports = {
   },
   env: {
     node: true,
-    "jest/globals": true,
   },
   settings: {
     "import/resolver": {
@@ -37,6 +35,6 @@ module.exports = {
     },
   ],
   rules: {
-    'no-unused-vars': 'off',
-  }
+    "no-unused-vars": "off",
+  },
 };
