@@ -7,6 +7,6 @@ dedupePeerDependents: true
 minimumReleaseAge: 10080
 shellEmulator: true
 
-# temporarily disable for now until we migrate away from jest and tsup
+# temporarily disable for now until we migrate away from tsup
 # trustPolicy: no-downgrade
 

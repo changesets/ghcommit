@@ -1,15 +1,16 @@
 import { promises as fs } from "fs";
 import { getOctokit } from "@actions/github";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ENV, REPO, ROOT_TEST_BRANCH_PREFIX, log } from "./env.js";
-import { commitFilesFromBuffers } from "../../node.js";
+import { commitFilesFromBuffers } from "../../src/node.js";
 import { deleteBranches, waitForGitHubToBeReady } from "./util.js";
 import {
   createRefMutation,
   getRefTreeQuery,
   getRepositoryMetadata,
-} from "../../github/graphql/queries.js";
-import { CommitMessage } from "../../github/graphql/generated/types.js";
+} from "../../src/github/graphql/queries.js";
+import { CommitMessage } from "../../src/github/graphql/generated/types.js";
 import git from "isomorphic-git";
 
 // TODO: re-enable strict tree tests when GitHub have addressed the createRef
@@ -53,7 +54,7 @@ describe("node", () => {
   const branches: string[] = [];
 
   // Set timeout to 1 minute
-  jest.setTimeout(60 * 1000);
+  vi.setConfig({ testTimeout: 60 * 1000 });
 
   let repositoryId: string;
 
@@ -316,7 +317,7 @@ describe("node", () => {
 
         await waitForGitHubToBeReady();
 
-        expect(() =>
+        await expect(() =>
           commitFilesFromBuffers({
             octokit,
             ...REPO,
