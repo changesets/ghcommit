@@ -317,7 +317,7 @@ describe("node", () => {
 
         await waitForGitHubToBeReady();
 
-        expect(() =>
+        await expect(() =>
           commitFilesFromBuffers({
             octokit,
             ...REPO,

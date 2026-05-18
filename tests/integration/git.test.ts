@@ -29,7 +29,7 @@ const expectBranchHasFile = async ({
   oid: string | null;
 }) => {
   if (oid === null) {
-    expect(() =>
+    await expect(() =>
       getRefTreeQuery(octokit, {
         ...REPO,
         ref: `refs/heads/${branch}`,
