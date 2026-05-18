@@ -53,7 +53,7 @@
     "test:integration": "vitest -c vitest.integration.config.ts"
   },
   "devDependencies": {
-    "@actions/github": "^6.0.0",
+    "@actions/github": "^9.1.1",
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.27.7",
     "@graphql-codegen/cli": "^5.0.2",
