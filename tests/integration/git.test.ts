@@ -657,7 +657,7 @@ describe("git", () => {
         p.stderr?.pipe(process.stderr);
       });
 
-      makeFileChanges("standard", { dir: repoDirectory, branch });
+      await makeFileChanges("standard", { dir: repoDirectory, branch });
 
       // Determine the previous commit hash
       const gitLog = await git.log({
