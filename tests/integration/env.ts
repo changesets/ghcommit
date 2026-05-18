@@ -1,9 +1,8 @@
 import { pino } from "pino";
 import { configDotenv } from "dotenv";
 
-export const ROOT_TEST_BRANCH_PREFIX = process.env
-  .ROOT_TEST_BRANCH_PREFIX as string;
-export const ROOT_TEMP_DIRECTORY = process.env.ROOT_TEMP_DIRECTORY as string;
+export const ROOT_TEST_BRANCH_PREFIX = process.env.ROOT_TEST_BRANCH_PREFIX!;
+export const ROOT_TEMP_DIRECTORY = process.env.ROOT_TEMP_DIRECTORY!;
 
 configDotenv();
 
