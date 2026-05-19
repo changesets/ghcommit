@@ -15,37 +15,34 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/changesets/ghcommit.git"
+    "url": "git+https://github.com/changesets/ghcommit.git"
   },
+  "type": "commonjs",
+  "sideEffects": false,
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     },
     "./core": {
       "import": "./dist/core.mjs",
-      "require": "./dist/core.js",
-      "types": "./dist/core.d.ts"
+      "require": "./dist/core.cjs"
     },
     "./fs": {
       "import": "./dist/fs.mjs",
-      "require": "./dist/fs.js",
-      "types": "./dist/fs.d.ts"
+      "require": "./dist/fs.cjs"
     },
     "./git": {
       "import": "./dist/git.mjs",
-      "require": "./dist/git.js",
-      "types": "./dist/git.d.ts"
+      "require": "./dist/git.cjs"
     },
     "./node": {
       "import": "./dist/node.mjs",
-      "require": "./dist/node.js",
-      "types": "./dist/node.d.ts"
+      "require": "./dist/node.cjs"
     }
   },
   "scripts": {
-    "build": "rm -rf dist && pnpm codegen:github && tsc --noEmit && tsup",
+    "build": "pnpm codegen:github && tsc --noEmit && tsdown",
     "codegen:github": "graphql-codegen --config src/github/codegen.ts",
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
     "format:fix": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -70,8 +67,9 @@
     "pino": "^9.3.2",
     "pino-pretty": "^11.2.2",
     "prettier": "^3.3.3",
+    "publint": "^0.3.20",
     "ts-node": "^10.9.2",
-    "tsup": "^8.1.0",
+    "tsdown": "^0.22.0",
     "typescript": "^5.3.3",
     "vitest": "^4.1.5"
   },
