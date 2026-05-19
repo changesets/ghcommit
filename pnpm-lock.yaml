@@ -1993,12 +1993,12 @@ packages:
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
-  js-yaml@3.14.1:
-    resolution: {integrity: sha512-okMH7OXXJ7YrN9Ok3/SXrnu4iX9yOk+25nqX4imS2npuvTYDmo/QEZoqwZkYaIDk3jVvBOTOIEgEhaLOynBS9g==}
+  js-yaml@3.14.2:
+    resolution: {integrity: sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==}
     hasBin: true
 
-  js-yaml@4.1.0:
-    resolution: {integrity: sha512-wpxZs9NoxZaJESJGIZTyDEaYpl0FKSA+FB9aJiyemKhMwkxQg63h4T1KJgUGHpTqPDNRcmmYLugrRjJlBtWvRA==}
+  js-yaml@4.1.1:
+    resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
     hasBin: true
 
   jsesc@2.5.2:
@@ -2133,8 +2133,11 @@ packages:
   lodash.startcase@4.4.0:
     resolution: {integrity: sha512-+WKqsK294HMSc2jEbNgpHpd0JfIBhp7rEV4aqXWqFr6AlXov+SlcgB1Fv01y2kGe3Gc8nMW7VA0SrGuSkRfIEg==}
 
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+  lodash@4.17.23:
+    resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
+
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
 
   log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
@@ -2196,11 +2199,11 @@ packages:
     resolution: {integrity: sha512-z0yWI+4FDrrweS8Zmt4Ej5HdJmky15+L2e6Wgn3+iK5fWzb6T3fhNFq2+MeTRb064c6Wr4N/wv0DzQTjNzHNGQ==}
     engines: {node: '>=10'}
 
-  minimatch@3.1.2:
-    resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}
+  minimatch@3.1.5:
+    resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
 
-  minimatch@4.2.3:
-    resolution: {integrity: sha512-lIUdtK5hdofgCTu3aT0sOaHsYR37viUuIc0rwnnDXImbwFRcumyLMeZaM0t0I/fgxS6s6JMfu0rLD1Wz9pv1ng==}
+  minimatch@4.2.6:
+    resolution: {integrity: sha512-i35PeWjrW3Kv6/Jken0yeuByzK4YWer7UWba3yWg8+v+5WQQtcKiQ1GqGP7Jc3jhUdlviU3gQf89ON+69eD8RA==}
     engines: {node: '>=10'}
 
   minimist@1.2.8:
@@ -2377,8 +2380,8 @@ packages:
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
-  picomatch@2.3.1:
-    resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
+  picomatch@2.3.2:
+    resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
     engines: {node: '>=8.6'}
 
   picomatch@4.0.4:
@@ -3611,7 +3614,7 @@ snapshots:
   '@changesets/parse@0.4.0':
     dependencies:
       '@changesets/types': 6.1.0
-      js-yaml: 3.14.1
+      js-yaml: 3.14.2
 
   '@changesets/pre@2.0.0':
     dependencies:
@@ -3784,7 +3787,7 @@ snapshots:
       common-tags: 1.8.2
       graphql: 16.9.0
       import-from: 4.0.0
-      lodash: 4.17.21
+      lodash: 4.17.23
       tslib: 2.4.1
 
   '@graphql-codegen/plugin-helpers@3.1.2(graphql@16.9.0)':
@@ -3794,7 +3797,7 @@ snapshots:
       common-tags: 1.8.2
       graphql: 16.9.0
       import-from: 4.0.0
-      lodash: 4.17.21
+      lodash: 4.17.23
       tslib: 2.4.1
 
   '@graphql-codegen/plugin-helpers@5.0.4(graphql@16.9.0)':
@@ -3804,7 +3807,7 @@ snapshots:
       common-tags: 1.8.2
       graphql: 16.9.0
       import-from: 4.0.0
-      lodash: 4.17.21
+      lodash: 4.17.23
       tslib: 2.6.3
 
   '@graphql-codegen/schema-ast@4.1.0(graphql@16.9.0)':
@@ -4078,8 +4081,8 @@ snapshots:
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.5
       jose: 5.6.3
-      js-yaml: 4.1.0
-      lodash: 4.17.21
+      js-yaml: 4.1.1
+      lodash: 4.18.1
       scuid: 1.1.0
       tslib: 2.6.3
       yaml-ast-parser: 0.0.43
@@ -4899,7 +4902,7 @@ snapshots:
   cosmiconfig@8.3.6(typescript@6.0.3):
     dependencies:
       import-fresh: 3.3.0
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       parse-json: 5.2.0
       path-type: 4.0.0
     optionalDependencies:
@@ -5174,7 +5177,7 @@ snapshots:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.1.2
+      minimatch: 3.1.5
       once: 1.4.0
       path-is-absolute: 1.0.1
 
@@ -5204,7 +5207,7 @@ snapshots:
       cosmiconfig: 8.3.6(typescript@6.0.3)
       graphql: 16.9.0
       jiti: 1.21.6
-      minimatch: 4.2.3
+      minimatch: 4.2.6
       string-env-interpolation: 1.0.1
       tslib: 2.6.3
     transitivePeerDependencies:
@@ -5312,7 +5315,7 @@ snapshots:
       cli-width: 3.0.0
       external-editor: 3.1.0
       figures: 3.2.0
-      lodash: 4.17.21
+      lodash: 4.18.1
       mute-stream: 0.0.8
       ora: 5.4.1
       run-async: 2.4.1
@@ -5405,12 +5408,12 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
-  js-yaml@3.14.1:
+  js-yaml@3.14.2:
     dependencies:
       argparse: 1.0.10
       esprima: 4.0.1
 
-  js-yaml@4.1.0:
+  js-yaml@4.1.1:
     dependencies:
       argparse: 2.0.1
 
@@ -5500,7 +5503,7 @@ snapshots:
   load-yaml-file@0.2.0:
     dependencies:
       graceful-fs: 4.2.11
-      js-yaml: 3.14.1
+      js-yaml: 3.14.2
       pify: 4.0.1
       strip-bom: 3.0.0
 
@@ -5516,7 +5519,9 @@ snapshots:
 
   lodash.startcase@4.4.0: {}
 
-  lodash@4.17.21: {}
+  lodash@4.17.23: {}
+
+  lodash@4.18.1: {}
 
   log-symbols@4.1.0:
     dependencies:
@@ -5568,17 +5573,17 @@ snapshots:
   micromatch@4.0.8:
     dependencies:
       braces: 3.0.3
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   mimic-fn@2.1.0: {}
 
   mimic-response@3.1.0: {}
 
-  minimatch@3.1.2:
+  minimatch@3.1.5:
     dependencies:
       brace-expansion: 1.1.11
 
-  minimatch@4.2.3:
+  minimatch@4.2.6:
     dependencies:
       brace-expansion: 1.1.11
 
@@ -5757,7 +5762,7 @@ snapshots:
 
   picocolors@1.1.1: {}
 
-  picomatch@2.3.1: {}
+  picomatch@2.3.2: {}
 
   picomatch@4.0.4: {}
 
@@ -5863,7 +5868,7 @@ snapshots:
   read-yaml-file@1.1.0:
     dependencies:
       graceful-fs: 4.2.11
-      js-yaml: 3.14.1
+      js-yaml: 3.14.2
       pify: 4.0.1
       strip-bom: 3.0.0
 
