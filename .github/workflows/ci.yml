@@ -54,6 +54,12 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Integration tests push to the repo, which requires a token with write
+    # access. Fork PRs only get a read-only GITHUB_TOKEN, so skip them here
+    # and rely on merge_group to gate the merge.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: write # integration tests create and push temporary branches
     steps:
