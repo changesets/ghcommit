@@ -164,7 +164,7 @@ export const commitFilesFromBase64 = async ({
         }
       : message;
 
-  await log?.debug(`Creating commit on branch ${branch}`);
+  log?.debug(`Creating commit on branch ${branch}`);
   const createCommitMutation: CreateCommitOnBranchMutationVariables = {
     input: {
       branch: {
