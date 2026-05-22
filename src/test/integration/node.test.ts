@@ -49,6 +49,8 @@ const BASIC_FILE_CONTENTS = {
 // const TEST_TARGET_TREE_WITH_BASIC_CHANGES =
 //   "a3431c9b42b71115c52bc6fbf9da3682cf0ed5e8";
 
+const getTempBranchName = (branch: string) => `changesets-ghcommit-temp/${branch}`;
+
 describe("node", () => {
   const branches: string[] = [];
 
@@ -113,6 +115,17 @@ describe("node", () => {
     }
 
     expect(ref.parents.nodes?.[0]?.oid).toEqual(oid);
+  };
+
+  const expectBranchDoesNotExist = async (branch: string) => {
+    await expect(
+      octokit.rest.git.getRef({
+        ...REPO,
+        ref: `heads/${branch}`,
+      }),
+    ).rejects.toMatchObject({
+      status: 404,
+    });
   };
 
   let testTargetCommit: string;
@@ -323,6 +336,53 @@ describe("node", () => {
         });
 
         await expectParentHasOid({ branch, oid: testTargetCommit });
+        await expectBranchDoesNotExist(getTempBranchName(branch));
+      });
+
+      it("cleans up a pre-existing temporary branch when force is true", async () => {
+        const branch = `${TEST_BRANCH_PREFIX}-existing-branch-force-existing-temp`;
+        const tempBranch = getTempBranchName(branch);
+        branches.push(branch, tempBranch);
+
+        await createRefMutation(octokit, {
+          input: {
+            repositoryId,
+            name: `refs/heads/${branch}`,
+            oid: testTargetCommit2,
+          },
+        });
+
+        await createRefMutation(octokit, {
+          input: {
+            repositoryId,
+            name: `refs/heads/${tempBranch}`,
+            oid: testTargetCommit2,
+          },
+        });
+
+        await commitFilesFromBuffers({
+          octokit,
+          ...REPO,
+          branch,
+          base: {
+            commit: testTargetCommit,
+          },
+          ...BASIC_FILE_CONTENTS,
+          force: true,
+        });
+
+        await waitForGitHubToBeReady();
+
+        await expectBranchHasTree({
+          branch,
+          file: {
+            path: BASIC_FILE_CHANGES_PATH,
+            oid: BASIC_FILE_CHANGES_OID,
+          },
+        });
+
+        await expectParentHasOid({ branch, oid: testTargetCommit });
+        await expectBranchDoesNotExist(tempBranch);
       });
 
       it("cannot commit to existing branch when force is false", async () => {
