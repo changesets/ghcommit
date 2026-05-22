@@ -15,45 +15,42 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/changesets/ghcommit.git"
+    "url": "git+https://github.com/changesets/ghcommit.git"
   },
+  "type": "commonjs",
+  "sideEffects": false,
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     },
     "./core": {
       "import": "./dist/core.mjs",
-      "require": "./dist/core.js",
-      "types": "./dist/core.d.ts"
+      "require": "./dist/core.cjs"
     },
     "./fs": {
       "import": "./dist/fs.mjs",
-      "require": "./dist/fs.js",
-      "types": "./dist/fs.d.ts"
+      "require": "./dist/fs.cjs"
     },
     "./git": {
       "import": "./dist/git.mjs",
-      "require": "./dist/git.js",
-      "types": "./dist/git.d.ts"
+      "require": "./dist/git.cjs"
     },
     "./node": {
       "import": "./dist/node.mjs",
-      "require": "./dist/node.js",
-      "types": "./dist/node.d.ts"
+      "require": "./dist/node.cjs"
     }
   },
   "scripts": {
-    "build": "rm -rf dist && pnpm codegen:github && tsc --noEmit && tsup",
+    "build": "pnpm codegen:github && tsc --noEmit && tsdown",
     "codegen:github": "graphql-codegen --config src/github/codegen.ts",
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
     "format:fix": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "lint": "eslint . --max-warnings 0",
-    "test:integration": "jest --config jest.integration.config.cjs"
+    "lint": "oxlint",
+    "test:integration": "vitest -c vitest.integration.config.ts"
   },
   "devDependencies": {
-    "@actions/github": "^6.0.0",
+    "@actions/github": "^9.0.0",
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.27.7",
     "@graphql-codegen/cli": "^5.0.2",
@@ -63,29 +60,22 @@
     "@octokit/core": "^6.1.2",
     "@octokit/graphql": "^8.1.1",
     "@octokit/graphql-schema": "^14.56.0",
-    "@types/eslint": "^8.56.5",
-    "@types/jest": "^29.5.12",
     "@types/node": "^20.11.24",
-    "@typescript-eslint/eslint-plugin": "^7.16.0",
-    "@typescript-eslint/parser": "^7.16.0",
     "dotenv": "^16.4.5",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-jest": "^28.6.0",
-    "eslint-plugin-only-warn": "^1.1.0",
-    "jest": "^29.7.0",
+    "oxlint": "^1.63.0",
+    "oxlint-tsgolint": "^0.22.1",
     "pino": "^9.3.2",
     "pino-pretty": "^11.2.2",
     "prettier": "^3.3.3",
-    "ts-jest": "^29.2.0",
-    "ts-node": "^10.9.2",
-    "tsup": "^8.1.0",
-    "typescript": "^5.3.3"
+    "publint": "^0.3.20",
+    "tsdown": "^0.22.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
   },
   "files": [
     "dist"
   ],
-  "packageManager": "pnpm@9.5.0",
+  "packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499",
   "publishConfig": {
     "access": "public"
   },

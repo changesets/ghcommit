@@ -1,41 +1,66 @@
-name: Release & Publish
+name: Publish
 
 on:
   push:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+  queue: max
+
+permissions: {}
 
 jobs:
-  release-and-publish:
+  version:
+    name: Version
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      hasChangesets: ${{ steps.changesets.outputs.hasChangesets }}
+    permissions:
+      contents: write # to create version commits (changesets/action)
+      pull-requests: write # to create pull request (changesets/action)
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Check out repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Use Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+          persist-credentials: false
+
+      - uses: ./.github/actions/ci-setup
         with:
-          node-version: 24.x
-      - name: Extract pnpm version and install
-        run: |
-          VERSION=$(cat package.json | grep '"packageManager": "pnpm@' | sed 's/.*"pnpm@\([^"]*\)".*/\1/')
-          npm install -g pnpm@$VERSION
-      - name: Cache pnpm modules
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+          skip-cache: true # avoid cache poisoning attacks
+
+      - name: Create or update release pull request
+        id: changesets
+        uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1.8.0
+
+  publish:
+    name: Publish
+    if: needs.version.outputs.hasChangesets == 'false'
+    needs: version
+    runs-on: ubuntu-latest
+    environment: npm
+    timeout-minutes: 10
+    permissions:
+      contents: write # to create release (changesets/action)
+      id-token: write # to use OpenID Connect token for trusted publishing (changesets/action)
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Run Changeset Workflow
-        uses: changesets/action@c48e67d110a68bc90ccf1098e9646092baacaa87 # v1.6.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/ci-setup
+        with:
+          skip-cache: true # avoid cache poisoning attacks
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish to npm
+        uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1.8.0
         with:
           publish: pnpm changeset publish
           commitMode: github-api
