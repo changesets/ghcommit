@@ -1,5 +1,13 @@
-import { getRepositoryMetadata } from "./github/graphql/queries.js";
-import type { GetRepositoryMetadataQuery } from "./github/graphql/generated/operations.js";
+import {
+  createCommitOnBranchQuery,
+  createRefMutation,
+  getRepositoryMetadata,
+  updateRefMutation,
+} from "./github/graphql/queries.js";
+import type {
+  CreateCommitOnBranchMutationVariables,
+  GetRepositoryMetadataQuery,
+} from "./github/graphql/generated/operations.js";
 import {
   CommitFilesFromBase64Args,
   CommitFilesResult,
@@ -41,15 +49,12 @@ const getOidFromRef = (
 
 const createCommit = async ({
   octokit,
-  owner,
-  repo,
+  refId,
   baseOid,
   message,
   fileChanges,
-}: Pick<
-  CommitFilesFromBase64Args,
-  "octokit" | "owner" | "repo" | "message" | "fileChanges"
-> & {
+}: Pick<CommitFilesFromBase64Args, "octokit" | "message" | "fileChanges"> & {
+  refId: string;
   baseOid: string;
 }) => {
   const normalizedMessage: CommitMessage =
@@ -60,52 +65,15 @@ const createCommit = async ({
         }
       : message;
 
-  const additions = await Promise.all(
-    (fileChanges.additions ?? []).map(async ({ path, contents }) => {
-      const blob = await octokit.rest.git.createBlob({
-        owner,
-        repo,
-        content: contents,
-        encoding: "base64",
-      });
-
-      return {
-        path,
-        mode: "100644" as const,
-        type: "blob" as const,
-        sha: blob.data.sha,
-      };
-    }),
-  );
-
-  const deletions = (fileChanges.deletions ?? []).map(({ path }) => ({
-    path,
-    mode: "100644" as const,
-    type: "blob" as const,
-    sha: null,
-  }));
-
-  const baseCommit = await octokit.rest.git.getCommit({
-    owner,
-    repo,
-    commit_sha: baseOid,
-  });
-
-  const tree = await octokit.rest.git.createTree({
-    owner,
-    repo,
-    base_tree: baseCommit.data.tree.sha,
-    tree: [...additions, ...deletions],
-  });
-
-  return octokit.rest.git.createCommit({
-    owner,
-    repo,
-    message: normalizedMessage.body?.trim()
-      ? `${normalizedMessage.headline}\n\n${normalizedMessage.body.trim()}`
-      : normalizedMessage.headline,
-    tree: tree.data.sha,
-    parents: [baseOid],
+  return createCommitOnBranchQuery(octokit, {
+    input: {
+      branch: {
+        id: refId,
+      },
+      expectedHeadOid: baseOid,
+      message: normalizedMessage,
+      fileChanges,
+    },
   });
 };
 
@@ -142,6 +110,8 @@ export const commitFilesFromBase64 = async ({
     throw new Error(`Ref ${JSON.stringify(baseRef)} not found`);
   }
 
+  const resolvedBaseRef = info.baseRef;
+
   /**
    * The commit oid to base the new commit on.
    *
@@ -151,6 +121,7 @@ export const commitFilesFromBase64 = async ({
   const baseOid = getOidFromRef(base, info.baseRef);
   const targetOid = info.targetBranch?.target?.oid ?? null;
   const sameBranchBase = "branch" in base && base.branch === branch;
+  const repositoryId = info.id;
 
   let mode: "create" | "update" | "force-update";
 
@@ -169,38 +140,54 @@ export const commitFilesFromBase64 = async ({
     );
   }
 
+  let refId: string;
+
+  if (mode === "create") {
+    const createdRef = await createRefMutation(octokit, {
+      input: {
+        repositoryId,
+        name: `refs/heads/${branch}`,
+        oid: baseOid,
+      },
+    });
+
+    const refIdStr = createdRef.createRef?.ref?.id;
+
+    if (!refIdStr) {
+      throw new Error(`Failed to create branch ${branch}`);
+    }
+
+    refId = refIdStr;
+  } else if (mode === "force-update") {
+    const updatedRef = await updateRefMutation(octokit, {
+      input: {
+        refId: sameBranchBase ? resolvedBaseRef!.id : info.targetBranch!.id,
+        oid: baseOid,
+        force: true,
+      },
+    });
+
+    const refIdStr = updatedRef.updateRef?.ref?.id;
+
+    if (!refIdStr) {
+      throw new Error(`Failed to update branch ${branch}`);
+    }
+
+    refId = refIdStr;
+  } else {
+    refId = sameBranchBase ? resolvedBaseRef!.id : info.targetBranch!.id;
+  }
+
   await log?.debug(`Creating commit on branch ${branch}`);
   const newCommit = await createCommit({
     octokit,
-    owner,
-    repo,
+    refId,
     baseOid,
     message,
     fileChanges,
   });
 
-  if (mode !== "create") {
-    const updatedRef = await octokit.rest.git.updateRef({
-      owner,
-      repo,
-      ref: `heads/${branch}`,
-      sha: newCommit.data.sha,
-      force: mode === "force-update",
-    });
-
-    return {
-      refId: updatedRef.data.node_id ?? null,
-    };
-  }
-
-  const createdRef = await octokit.rest.git.createRef({
-    owner,
-    repo,
-    ref: `refs/heads/${branch}`,
-    sha: newCommit.data.sha,
-  });
-
   return {
-    refId: createdRef.data.node_id ?? null,
+    refId: newCommit.createCommitOnBranch?.ref?.id ?? null,
   };
 };
