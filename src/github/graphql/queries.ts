@@ -78,13 +78,11 @@ const DELETE_REF = /* GraphQL */ `
 const CREATE_COMMIT_ON_BRANCH = /* GraphQL */ `
   mutation createCommitOnBranch($input: CreateCommitOnBranchInput!) {
     createCommitOnBranch(input: $input) {
+      commit {
+        oid
+      }
       ref {
         id
-        target {
-          ... on Commit {
-            oid
-          }
-        }
       }
     }
   }

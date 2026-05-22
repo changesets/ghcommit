@@ -197,9 +197,7 @@ export const commitFilesFromBase64 = async ({
       fileChanges,
     });
 
-    const tempRefTarget = tempCommit.createCommitOnBranch?.ref?.target;
-    const tempHeadOid =
-      tempRefTarget?.__typename === "Commit" ? tempRefTarget.oid : null;
+    const tempHeadOid = tempCommit.createCommitOnBranch?.commit?.oid;
 
     if (!tempHeadOid) {
       throw new Error(
