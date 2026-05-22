@@ -42,9 +42,7 @@ const getOidFromRef = (
   return ref.target.oid;
 };
 
-const isAlreadyExistingRefError = (
-  error: unknown,
-) =>
+const isAlreadyExistingRefError = (error: unknown) =>
   typeof error === "object" &&
   error !== null &&
   "status" in error &&
@@ -190,7 +188,7 @@ export const commitFilesFromBase64 = async ({
       tempRefId = refIdStr;
     }
 
-    await log?.debug(`Creating commit on branch ${tempBranch}`);
+    log?.debug(`Creating commit on branch ${tempBranch}`);
     const tempCommit = await createCommit({
       octokit,
       refId: tempRefId,
@@ -255,7 +253,7 @@ export const commitFilesFromBase64 = async ({
     refId = sameBranchBase ? resolvedBaseRef!.id : info.targetBranch!.id;
   }
 
-  await log?.debug(`Creating commit on branch ${branch}`);
+  log?.debug(`Creating commit on branch ${branch}`);
   const newCommit = await createCommit({
     octokit,
     refId,
