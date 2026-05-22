@@ -1,6 +1,6 @@
-export type GitHubClient = {
-  graphql: <T>(query: string, variables: any) => Promise<T>;
-};
+export type GitHubClient = ReturnType<
+  typeof import("@actions/github").getOctokit
+>;
 
 import type {
   CreateCommitOnBranchMutation,
@@ -78,6 +78,9 @@ const DELETE_REF = /* GraphQL */ `
 const CREATE_COMMIT_ON_BRANCH = /* GraphQL */ `
   mutation createCommitOnBranch($input: CreateCommitOnBranchInput!) {
     createCommitOnBranch(input: $input) {
+      commit {
+        oid
+      }
       ref {
         id
       }
