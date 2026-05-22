@@ -50,7 +50,8 @@ const BASIC_FILE_CONTENTS = {
 // const TEST_TARGET_TREE_WITH_BASIC_CHANGES =
 //   "a3431c9b42b71115c52bc6fbf9da3682cf0ed5e8";
 
-const getTempBranchName = (branch: string) => `changesets-ghcommit-temp/${branch}`;
+const getTempBranchName = (branch: string) =>
+  `changesets-ghcommit-temp/${branch}`;
 
 describe("node", () => {
   const branches: string[] = [];
