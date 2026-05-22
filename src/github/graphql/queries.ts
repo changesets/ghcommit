@@ -1,6 +1,6 @@
-export type GitHubClient = {
-  graphql: <T>(query: string, variables: any) => Promise<T>;
-};
+export type GitHubClient = ReturnType<
+  typeof import("@actions/github").getOctokit
+>;
 
 import type {
   CreateCommitOnBranchMutation,

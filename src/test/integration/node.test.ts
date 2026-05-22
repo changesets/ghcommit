@@ -93,6 +93,28 @@ describe("node", () => {
     }
   };
 
+  const expectParentHasOid = async ({
+    branch,
+    oid,
+  }: {
+    branch: string;
+    oid: string;
+  }) => {
+    const ref = (
+      await getRefTreeQuery(octokit, {
+        ...REPO,
+        ref: `refs/heads/${branch}`,
+        path: "package.json",
+      })
+    ).repository?.ref?.target;
+
+    if (!ref || !("parents" in ref)) {
+      throw new Error("Unexpected result");
+    }
+
+    expect(ref.parents.nodes?.[0]?.oid).toEqual(oid);
+  };
+
   let testTargetCommit: string;
   /**
    * For tests, important that this commit is not an ancestor of TEST_TARGET_COMMIT,
@@ -299,6 +321,8 @@ describe("node", () => {
             oid: BASIC_FILE_CHANGES_OID,
           },
         });
+
+        await expectParentHasOid({ branch, oid: testTargetCommit });
       });
 
       it("cannot commit to existing branch when force is false", async () => {

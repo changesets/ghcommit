@@ -1,13 +1,5 @@
-import {
-  createCommitOnBranchQuery,
-  createRefMutation,
-  getRepositoryMetadata,
-  updateRefMutation,
-} from "./github/graphql/queries.js";
-import type {
-  CreateCommitOnBranchMutationVariables,
-  GetRepositoryMetadataQuery,
-} from "./github/graphql/generated/operations.js";
+import { getRepositoryMetadata } from "./github/graphql/queries.js";
+import type { GetRepositoryMetadataQuery } from "./github/graphql/generated/operations.js";
 import {
   CommitFilesFromBase64Args,
   CommitFilesResult,
@@ -21,6 +13,8 @@ const getBaseRef = (base: GitBase): string => {
   } else if ("tag" in base) {
     return `refs/tags/${base.tag}`;
   } else {
+    // For explicit commit bases we don't resolve the base oid from a ref,
+    // but the shared metadata query still expects a valid qualified ref name.
     return "HEAD";
   }
 };
@@ -43,6 +37,76 @@ const getOidFromRef = (
   }
 
   return ref.target.oid;
+};
+
+const createCommit = async ({
+  octokit,
+  owner,
+  repo,
+  baseOid,
+  message,
+  fileChanges,
+}: Pick<
+  CommitFilesFromBase64Args,
+  "octokit" | "owner" | "repo" | "message" | "fileChanges"
+> & {
+  baseOid: string;
+}) => {
+  const normalizedMessage: CommitMessage =
+    typeof message === "string"
+      ? {
+          headline: message.split("\n")[0]?.trim() ?? "",
+          body: message.split("\n").slice(1).join("\n").trim(),
+        }
+      : message;
+
+  const additions = await Promise.all(
+    (fileChanges.additions ?? []).map(async ({ path, contents }) => {
+      const blob = await octokit.rest.git.createBlob({
+        owner,
+        repo,
+        content: contents,
+        encoding: "base64",
+      });
+
+      return {
+        path,
+        mode: "100644" as const,
+        type: "blob" as const,
+        sha: blob.data.sha,
+      };
+    }),
+  );
+
+  const deletions = (fileChanges.deletions ?? []).map(({ path }) => ({
+    path,
+    mode: "100644" as const,
+    type: "blob" as const,
+    sha: null,
+  }));
+
+  const baseCommit = await octokit.rest.git.getCommit({
+    owner,
+    repo,
+    commit_sha: baseOid,
+  });
+
+  const tree = await octokit.rest.git.createTree({
+    owner,
+    repo,
+    base_tree: baseCommit.data.tree.sha,
+    tree: [...additions, ...deletions],
+  });
+
+  return octokit.rest.git.createCommit({
+    owner,
+    repo,
+    message: normalizedMessage.body?.trim()
+      ? `${normalizedMessage.headline}\n\n${normalizedMessage.body.trim()}`
+      : normalizedMessage.headline,
+    tree: tree.data.sha,
+    parents: [baseOid],
+  });
 };
 
 export const commitFilesFromBase64 = async ({
@@ -70,115 +134,73 @@ export const commitFilesFromBase64 = async ({
   log?.debug(`Repo info: ${JSON.stringify(info, null, 2)}`);
 
   if (!info) {
-    throw new Error(`Repository ${repositoryNameWithOwner} not found`);
+    throw new Error(
+      `Repository ${JSON.stringify(repositoryNameWithOwner)} not found`,
+    );
+  }
+  if (!("commit" in base) && !info.baseRef) {
+    throw new Error(`Ref ${JSON.stringify(baseRef)} not found`);
   }
 
-  const repositoryId = info.id;
   /**
    * The commit oid to base the new commit on.
    *
-   * Used both to create / update the new branch (if necessary),
-   * and to ensure no changes have been made as we push the new commit.
+   * Used both to create the new commit,
+   * and to determine whether an existing branch can be updated.
    */
   const baseOid = getOidFromRef(base, info.baseRef);
+  const targetOid = info.targetBranch?.target?.oid ?? null;
+  const sameBranchBase = "branch" in base && base.branch === branch;
 
-  let refId: string;
+  let mode: "create" | "update" | "force-update";
 
-  if ("branch" in base && base.branch === branch) {
-    log?.debug(`Committing to the same branch as base: ${branch} (${baseOid})`);
-    // Get existing branch refId
-
-    if (!info.baseRef) {
-      throw new Error(`Ref ${baseRef} not found`);
-    }
-    refId = info.baseRef.id;
+  if (sameBranchBase) {
+    mode = force ? "force-update" : "update";
+  } else if (targetOid === null) {
+    // TODO: legit *creation* failure should be retried if `force === true`
+    mode = "create";
+  } else if (force) {
+    mode = "force-update";
+  } else if (targetOid === baseOid) {
+    mode = "update";
   } else {
-    // Determine if the branch needs to be created or not
-    if (info.targetBranch?.target?.oid) {
-      // Branch already exists, check if it matches the base
-      if (info.targetBranch.target.oid !== baseOid) {
-        if (force) {
-          log?.debug(
-            `Branch ${branch} exists but does not match base ${baseOid}, forcing update to base`,
-          );
-          const refIdUpdate = await updateRefMutation(octokit, {
-            input: {
-              refId: info.targetBranch.id,
-              oid: baseOid,
-              force: true,
-            },
-          });
-
-          log?.debug(
-            `Updated branch with refId ${JSON.stringify(refIdUpdate, null, 2)}`,
-          );
-
-          const refIdStr = refIdUpdate.updateRef?.ref?.id;
-
-          if (!refIdStr) {
-            throw new Error(`Failed to create branch ${branch}`);
-          }
-
-          refId = refIdStr;
-        } else {
-          throw new Error(
-            `Branch ${branch} exists already and does not match base ${baseOid}, force is set to false`,
-          );
-        }
-      } else {
-        log?.debug(
-          `Branch ${branch} already exists and matches base ${baseOid}`,
-        );
-        refId = info.targetBranch.id;
-      }
-    } else {
-      // Create branch as it does not exist yet
-      log?.debug(`Creating branch ${branch} from commit ${baseOid}}`);
-      const refIdCreation = await createRefMutation(octokit, {
-        input: {
-          repositoryId,
-          name: `refs/heads/${branch}`,
-          oid: baseOid,
-        },
-      });
-
-      log?.debug(
-        `Created branch with refId ${JSON.stringify(refIdCreation, null, 2)}`,
-      );
-
-      const refIdStr = refIdCreation.createRef?.ref?.id;
-
-      if (!refIdStr) {
-        throw new Error(`Failed to create branch ${branch}`);
-      }
-
-      refId = refIdStr;
-    }
+    throw new Error(
+      `Branch ${branch} exists already and does not match base ${baseOid}, force is set to false`,
+    );
   }
 
-  const finalMessage: CommitMessage =
-    typeof message === "string"
-      ? {
-          headline: message.split("\n")[0]?.trim() ?? "",
-          body: message.split("\n").slice(1).join("\n").trim(),
-        }
-      : message;
-
   await log?.debug(`Creating commit on branch ${branch}`);
-  const createCommitMutation: CreateCommitOnBranchMutationVariables = {
-    input: {
-      branch: {
-        id: refId,
-      },
-      expectedHeadOid: baseOid,
-      message: finalMessage,
-      fileChanges,
-    },
-  };
-  log?.debug(JSON.stringify(createCommitMutation, null, 2));
+  const newCommit = await createCommit({
+    octokit,
+    owner,
+    repo,
+    baseOid,
+    message,
+    fileChanges,
+  });
 
-  const result = await createCommitOnBranchQuery(octokit, createCommitMutation);
+  if (mode !== "create") {
+    const updatedRef = await octokit.rest.git.updateRef({
+      owner,
+      repo,
+      ref: `heads/${branch}`,
+      sha: newCommit.data.sha,
+      force: mode === "force-update",
+    });
+
+    return {
+      refId: updatedRef.data.node_id ?? null,
+    };
+  }
+
+  const createdRef = await octokit.rest.git.createRef({
+    owner,
+    repo,
+    ref: `refs/heads/${branch}`,
+    sha: newCommit.data.sha,
+  });
+
   return {
-    refId: result.createCommitOnBranch?.ref?.id ?? null,
+    refId: createdRef.data.node_id ?? null,
   };
 };
