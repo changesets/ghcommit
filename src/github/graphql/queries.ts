@@ -80,6 +80,11 @@ const CREATE_COMMIT_ON_BRANCH = /* GraphQL */ `
     createCommitOnBranch(input: $input) {
       ref {
         id
+        target {
+          ... on Commit {
+            oid
+          }
+        }
       }
     }
   }

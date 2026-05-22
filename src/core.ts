@@ -1,13 +1,8 @@
 import {
   createCommitOnBranchQuery,
-  createRefMutation,
   getRepositoryMetadata,
-  updateRefMutation,
 } from "./github/graphql/queries.js";
-import type {
-  CreateCommitOnBranchMutationVariables,
-  GetRepositoryMetadataQuery,
-} from "./github/graphql/generated/operations.js";
+import type { GetRepositoryMetadataQuery } from "./github/graphql/generated/operations.js";
 import {
   CommitFilesFromBase64Args,
   CommitFilesResult,
@@ -46,6 +41,18 @@ const getOidFromRef = (
 
   return ref.target.oid;
 };
+
+const isAlreadyExistingRefError = (
+  error: unknown,
+) =>
+  typeof error === "object" &&
+  error !== null &&
+  "status" in error &&
+  "message" in error &&
+  typeof error.status === "number" &&
+  typeof error.message === "string" &&
+  error.status === 422 &&
+  error.message.includes("Reference already exists");
 
 const createCommit = async ({
   octokit,
@@ -121,7 +128,6 @@ export const commitFilesFromBase64 = async ({
   const baseOid = getOidFromRef(base, info.baseRef);
   const targetOid = info.targetBranch?.target?.oid ?? null;
   const sameBranchBase = "branch" in base && base.branch === branch;
-  const repositoryId = info.id;
 
   let mode: "create" | "update" | "force-update";
 
@@ -140,37 +146,108 @@ export const commitFilesFromBase64 = async ({
     );
   }
 
+  if (mode === "force-update") {
+    // Use a stable temp branch name so a later run can recover and reuse it
+    // if an earlier run failed before cleanup completed.
+    const tempBranch = `changesets-ghcommit-temp/${branch}`;
+
+    let tempRefId: string;
+
+    try {
+      const createdTempRef = await octokit.rest.git.createRef({
+        owner,
+        repo,
+        ref: `refs/heads/${tempBranch}`,
+        sha: baseOid,
+      });
+
+      const refIdStr = createdTempRef.data.node_id;
+
+      if (!refIdStr) {
+        throw new Error(`Failed to create temporary branch ${tempBranch}`);
+      }
+
+      tempRefId = refIdStr;
+    } catch (error) {
+      if (!isAlreadyExistingRefError(error)) {
+        throw error;
+      }
+
+      const updatedTempRef = await octokit.rest.git.updateRef({
+        owner,
+        repo,
+        ref: `heads/${tempBranch}`,
+        sha: baseOid,
+        force: true,
+      });
+
+      const refIdStr = updatedTempRef.data.node_id;
+
+      if (!refIdStr) {
+        throw new Error(`Failed to update temporary branch ${tempBranch}`);
+      }
+
+      tempRefId = refIdStr;
+    }
+
+    await log?.debug(`Creating commit on branch ${tempBranch}`);
+    const tempCommit = await createCommit({
+      octokit,
+      refId: tempRefId,
+      baseOid,
+      message,
+      fileChanges,
+    });
+
+    const tempRefTarget = tempCommit.createCommitOnBranch?.ref?.target;
+    const tempHeadOid =
+      tempRefTarget?.__typename === "Commit" ? tempRefTarget.oid : null;
+
+    if (!tempHeadOid) {
+      throw new Error(
+        `Failed to determine head commit of temporary branch ${tempBranch}`,
+      );
+    }
+
+    const updatedTargetRef = await octokit.rest.git.updateRef({
+      owner,
+      repo,
+      ref: `heads/${branch}`,
+      sha: tempHeadOid,
+      force: true,
+    });
+
+    const updatedTargetRefId = updatedTargetRef.data.node_id;
+
+    if (!updatedTargetRefId) {
+      throw new Error(`Failed to update branch ${branch}`);
+    }
+
+    await octokit.rest.git.deleteRef({
+      owner,
+      repo,
+      ref: `heads/${tempBranch}`,
+    });
+
+    return {
+      refId: updatedTargetRefId,
+    };
+  }
+
   let refId: string;
 
   if (mode === "create") {
-    const createdRef = await createRefMutation(octokit, {
-      input: {
-        repositoryId,
-        name: `refs/heads/${branch}`,
-        oid: baseOid,
-      },
+    const createdRef = await octokit.rest.git.createRef({
+      owner,
+      repo,
+      ref: `refs/heads/${branch}`,
+      sha: baseOid,
     });
 
-    const refIdStr = createdRef.createRef?.ref?.id;
+    const refIdStr = createdRef.data.node_id;
 
     if (!refIdStr) {
       throw new Error(`Failed to create branch ${branch}`);
-    }
-
-    refId = refIdStr;
-  } else if (mode === "force-update") {
-    const updatedRef = await updateRefMutation(octokit, {
-      input: {
-        refId: sameBranchBase ? resolvedBaseRef!.id : info.targetBranch!.id,
-        oid: baseOid,
-        force: true,
-      },
-    });
-
-    const refIdStr = updatedRef.updateRef?.ref?.id;
-
-    if (!refIdStr) {
-      throw new Error(`Failed to update branch ${branch}`);
     }
 
     refId = refIdStr;
