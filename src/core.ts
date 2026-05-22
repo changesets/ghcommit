@@ -70,6 +70,7 @@ const createCommit = async ({
         }
       : message;
 
+  // we have to stick to GraphQL here as with REST, each file change would become a separate API call
   return createCommitOnBranchQuery(octokit, {
     input: {
       branch: {
