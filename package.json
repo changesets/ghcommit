@@ -50,7 +50,7 @@
   "scripts": {
     "build": "pnpm codegen:github && tsc --noEmit && tsdown",
     "codegen:github": "graphql-codegen --config src/github/codegen.ts",
-    "format:check": "oxfmt --check",
+    "format": "oxfmt --check",
     "format:fix": "oxfmt",
     "lint": "oxlint",
     "test:integration": "vitest -c vitest.integration.config.ts"
