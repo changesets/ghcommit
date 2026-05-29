@@ -2,15 +2,15 @@ import { promises as fs } from "fs";
 import * as path from "path";
 import { getOctokit } from "@actions/github";
 import { afterAll, describe, it } from "vitest";
-import { commitFilesFromDirectory } from "../../src/fs.js";
+import { commitFilesFromDirectory } from "../../src/fs.ts";
 import {
   ENV,
   REPO,
   ROOT_TEMP_DIRECTORY,
   ROOT_TEST_BRANCH_PREFIX,
   log,
-} from "./env.js";
-import { deleteBranches } from "./util.js";
+} from "./env.ts";
+import { deleteBranches } from "./util.ts";
 
 const octokit = getOctokit(ENV.GITHUB_TOKEN);
 

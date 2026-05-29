@@ -4,16 +4,16 @@ import path from "path";
 import { getOctokit } from "@actions/github";
 import git from "isomorphic-git";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import { commitChangesFromRepo } from "../../src/git";
-import { getRefTreeQuery } from "../../src/github/graphql/queries";
+import { commitChangesFromRepo } from "../../src/git.ts";
+import { getRefTreeQuery } from "../../src/github/graphql/queries.ts";
 import {
   ENV,
   REPO,
   ROOT_TEMP_DIRECTORY,
   ROOT_TEST_BRANCH_PREFIX,
   log,
-} from "./env";
-import { deleteBranches, waitForGitHubToBeReady } from "./util";
+} from "./env.ts";
+import { deleteBranches, waitForGitHubToBeReady } from "./util.ts";
 
 const octokit = getOctokit(ENV.GITHUB_TOKEN);
 
