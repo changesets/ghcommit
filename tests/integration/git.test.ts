@@ -1,5 +1,11 @@
+import { execFile } from "child_process";
 import fs from "fs";
 import path from "path";
+import { getOctokit } from "@actions/github";
+import git from "isomorphic-git";
+import { afterAll, describe, expect, it, vi } from "vitest";
+import { commitChangesFromRepo } from "../../src/git";
+import { getRefTreeQuery } from "../../src/github/graphql/queries";
 import {
   ENV,
   REPO,
@@ -7,13 +13,7 @@ import {
   ROOT_TEST_BRANCH_PREFIX,
   log,
 } from "./env";
-import { execFile } from "child_process";
-import { getOctokit } from "@actions/github";
-import { afterAll, describe, expect, it, vi } from "vitest";
-import { commitChangesFromRepo } from "../../src/git";
-import { getRefTreeQuery } from "../../src/github/graphql/queries";
 import { deleteBranches, waitForGitHubToBeReady } from "./util";
-import git from "isomorphic-git";
 
 const octokit = getOctokit(ENV.GITHUB_TOKEN);
 

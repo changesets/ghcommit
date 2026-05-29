@@ -15,7 +15,6 @@
   and previously could be used in its place.
 
 - [#40](https://github.com/changesets/ghcommit/pull/40) [`4117e39`](https://github.com/changesets/ghcommit/commit/4117e398eafae4cdf42837e1240e140dbc6592db) Thanks [@s0](https://github.com/s0)! - Refactor & clean up options for multiple functions
-
   - For `commitFilesFromDirectory`:
     - Rename `workingDirectory` to `cwd` for consistency across repos,
       and utils like `exec`
