@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import type { CodegenConfig } from "@graphql-codegen/cli";
 
 const schemaPath = "node_modules/.cache/github-graphql-schema.graphql";
@@ -12,6 +13,7 @@ if (process.env.CI || !fs.existsSync(schemaPath)) {
       `Failed to fetch GitHub GraphQL schema: ${result.status} ${result.statusText}`,
     );
   }
+  fs.mkdirSync(path.dirname(schemaPath), { recursive: true });
   fs.writeFileSync(schemaPath, await result.text());
 }
 
