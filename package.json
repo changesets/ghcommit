@@ -20,7 +20,7 @@
   "files": [
     "dist"
   ],
-  "type": "commonjs",
+  "type": "module",
   "sideEffects": false,
   "exports": {
     ".": {
