@@ -3,7 +3,6 @@ import type {
   FileChanges,
 } from "./github/graphql/generated/types.js";
 import type { GitHubClient } from "./github/graphql/queries.js";
-
 import type { Logger } from "./logging.js";
 
 export type CommitFilesResult = {
@@ -45,13 +44,11 @@ export interface CommitFilesSharedArgsWithBase extends CommitFilesBasedArgs {
   base: GitBase;
 }
 
-export interface CommitFilesFromBase64Args
-  extends CommitFilesSharedArgsWithBase {
+export interface CommitFilesFromBase64Args extends CommitFilesSharedArgsWithBase {
   fileChanges: FileChanges;
 }
 
-export interface CommitFilesFromBuffersArgs
-  extends CommitFilesSharedArgsWithBase {
+export interface CommitFilesFromBuffersArgs extends CommitFilesSharedArgsWithBase {
   /**
    * The file changes, relative to the repository root, to make to the specified branch.
    */
@@ -64,8 +61,7 @@ export interface CommitFilesFromBuffersArgs
   };
 }
 
-export interface CommitFilesFromDirectoryArgs
-  extends CommitFilesSharedArgsWithBase {
+export interface CommitFilesFromDirectoryArgs extends CommitFilesSharedArgsWithBase {
   /**
    * The directory to consider the root of the repository when calculating
    * file paths
