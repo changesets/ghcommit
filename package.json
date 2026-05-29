@@ -69,7 +69,7 @@
     "@graphql-codegen/typescript-operations": "^4.0.4",
     "@octokit/core": "^6.1.2",
     "@octokit/graphql": "^8.1.1",
-    "@octokit/graphql-schema": "^14.56.0",
+    "@octokit/graphql-schema": "^15.26.1",
     "@types/node": "^20.11.24",
     "dotenv": "^16.4.5",
     "oxfmt": "^0.51.0",
