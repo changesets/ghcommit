@@ -17,7 +17,7 @@
     "type": "git",
     "url": "git+https://github.com/changesets/ghcommit.git"
   },
-  "type": "commonjs",
+  "type": "module",
   "sideEffects": false,
   "exports": {
     ".": {
