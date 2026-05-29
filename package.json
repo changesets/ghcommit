@@ -4,8 +4,8 @@
   "description": "Directly change files on github using the github API, to support GPG signing",
   "keywords": [
     "actions",
-    "github",
     "git",
+    "github",
     "gpg"
   ],
   "license": "MIT",
@@ -17,6 +17,9 @@
     "type": "git",
     "url": "git+https://github.com/changesets/ghcommit.git"
   },
+  "files": [
+    "dist"
+  ],
   "type": "commonjs",
   "sideEffects": false,
   "exports": {
@@ -41,13 +44,19 @@
       "require": "./dist/node.cjs"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "pnpm codegen:github && tsc --noEmit && tsdown",
     "codegen:github": "graphql-codegen --config src/github/codegen.ts",
-    "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
-    "format:fix": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format:check": "oxfmt --check",
+    "format:fix": "oxfmt",
     "lint": "oxlint",
     "test:integration": "vitest -c vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "isomorphic-git": "^1.36.3"
   },
   "devDependencies": {
     "@actions/github": "^9.0.0",
@@ -62,25 +71,15 @@
     "@octokit/graphql-schema": "^14.56.0",
     "@types/node": "^20.11.24",
     "dotenv": "^16.4.5",
+    "oxfmt": "^0.51.0",
     "oxlint": "^1.63.0",
     "oxlint-tsgolint": "^0.22.1",
     "pino": "^9.3.2",
     "pino-pretty": "^11.2.2",
-    "prettier": "^3.3.3",
     "publint": "^0.3.20",
     "tsdown": "^0.22.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
   },
-  "files": [
-    "dist"
-  ],
-  "packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499",
-  "publishConfig": {
-    "access": "public"
-  },
-  "dependencies": {
-    "isomorphic-git": "^1.36.3"
-  },
-  "prettier": {}
+  "packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499"
 }

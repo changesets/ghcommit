@@ -1,14 +1,14 @@
+import type { GetRepositoryMetadataQuery } from "./github/graphql/generated/operations.js";
+import { CommitMessage } from "./github/graphql/generated/types.js";
 import {
   createCommitOnBranchQuery,
   getRepositoryMetadata,
 } from "./github/graphql/queries.js";
-import type { GetRepositoryMetadataQuery } from "./github/graphql/generated/operations.js";
 import {
   CommitFilesFromBase64Args,
   CommitFilesResult,
   GitBase,
 } from "./interface.js";
-import { CommitMessage } from "./github/graphql/generated/types.js";
 
 const getBaseRef = (base: GitBase): string => {
   if ("branch" in base) {

@@ -1,4 +1,4 @@
 {
-  "//": "Temporary until we can set this in the root",
-  "type": "module"
+  "type": "module",
+  "//": "Temporary until we can set this in the root"
 }
