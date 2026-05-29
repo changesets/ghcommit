@@ -2,15 +2,15 @@ import { promises as fs } from "fs";
 import { getOctokit } from "@actions/github";
 import git from "isomorphic-git";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { CommitMessage } from "../../src/github/graphql/generated/types.js";
+import type { CommitMessage } from "../../src/github/graphql/generated/types.ts";
 import {
   createRefMutation,
   getRefTreeQuery,
   getRepositoryMetadata,
-} from "../../src/github/graphql/queries.js";
-import { commitFilesFromBuffers } from "../../src/node.js";
-import { ENV, REPO, ROOT_TEST_BRANCH_PREFIX, log } from "./env.js";
-import { deleteBranches, waitForGitHubToBeReady } from "./util.js";
+} from "../../src/github/graphql/queries.ts";
+import { commitFilesFromBuffers } from "../../src/node.ts";
+import { ENV, REPO, ROOT_TEST_BRANCH_PREFIX, log } from "./env.ts";
+import { deleteBranches, waitForGitHubToBeReady } from "./util.ts";
 
 // TODO: re-enable strict tree tests when GitHub have addressed the createRef
 // bug that's currently used in integration tests

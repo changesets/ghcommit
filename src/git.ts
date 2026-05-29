@@ -1,12 +1,12 @@
 import { promises as fs } from "fs";
 import { relative, resolve } from "path";
 import git from "isomorphic-git";
-import {
+import type {
   CommitChangesFromRepoArgs,
   CommitFilesFromBuffersArgs,
   CommitFilesResult,
-} from "./interface";
-import { commitFilesFromBuffers } from "./node";
+} from "./interface.ts";
+import { commitFilesFromBuffers } from "./node.ts";
 
 /**
  * @see https://isomorphic-git.org/docs/en/walk#walkerentry-mode

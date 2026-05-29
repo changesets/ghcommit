@@ -26,6 +26,7 @@ const config: CodegenConfig = {
       config: {
         // TODO: Look into adding stricter types or use `unknown`
         defaultScalarType: "any",
+        enumsAsTypes: true,
       },
     },
     "src/github/graphql/generated/operations.ts": {
@@ -34,6 +35,7 @@ const config: CodegenConfig = {
         // TODO: Look into adding stricter types or use `unknown`
         defaultScalarType: "any",
         importSchemaTypesFrom: "src/github/graphql/generated/types.ts",
+        importExtension: ".ts",
       },
     },
   },

@@ -48,7 +48,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pnpm codegen:github && tsc --noEmit && tsdown",
+    "build": "pnpm codegen:github && tsc && tsdown",
     "codegen:github": "graphql-codegen --config src/github/codegen.ts",
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
@@ -66,6 +66,7 @@
     "@graphql-codegen/cli": "^7.0.0",
     "@octokit/core": "^6.1.2",
     "@octokit/graphql": "^8.1.1",
+    "@tsconfig/node22": "^22.0.5",
     "@types/node": "^20.11.24",
     "dotenv": "^16.4.5",
     "oxfmt": "^0.51.0",

@@ -1,7 +1,7 @@
 import {
   deleteRefMutation,
   getRepositoryMetadata,
-  GitHubClient,
+  type GitHubClient,
 } from "../../src/github/graphql/queries.js";
 import { REPO } from "./env.js";
 

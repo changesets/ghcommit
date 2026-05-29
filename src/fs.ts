@@ -1,11 +1,11 @@
 import { promises as fs } from "fs";
 import * as path from "path";
-import type { FileAddition } from "./github/graphql/generated/types.js";
-import {
+import type { FileAddition } from "./github/graphql/generated/types.ts";
+import type {
   CommitFilesFromDirectoryArgs,
   CommitFilesResult,
-} from "./interface.js";
-import { commitFilesFromBuffers } from "./node.js";
+} from "./interface.ts";
+import { commitFilesFromBuffers } from "./node.ts";
 
 export const commitFilesFromDirectory = async ({
   cwd,

@@ -1,9 +1,9 @@
 import type {
   CommitMessage,
   FileChanges,
-} from "./github/graphql/generated/types.js";
-import type { GitHubClient } from "./github/graphql/queries.js";
-import type { Logger } from "./logging.js";
+} from "./github/graphql/generated/types.ts";
+import type { GitHubClient } from "./github/graphql/queries.ts";
+import type { Logger } from "./logging.ts";
 
 export type CommitFilesResult = {
   refId: string | null;

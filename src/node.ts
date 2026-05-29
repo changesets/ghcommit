@@ -1,5 +1,8 @@
 import { commitFilesFromBase64 } from "./core.js";
-import { CommitFilesFromBuffersArgs, CommitFilesResult } from "./interface.js";
+import type {
+  CommitFilesFromBuffersArgs,
+  CommitFilesResult,
+} from "./interface.ts";
 
 export const commitFilesFromBuffers = async ({
   fileChanges,
