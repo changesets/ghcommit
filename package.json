@@ -67,7 +67,7 @@
     "@octokit/core": "^6.1.2",
     "@octokit/graphql": "^8.1.1",
     "@tsconfig/node22": "^22.0.5",
-    "@types/node": "^20.11.24",
+    "@types/node": "^25.9.1",
     "dotenv": "^16.4.5",
     "oxfmt": "^0.51.0",
     "oxlint": "^1.63.0",
