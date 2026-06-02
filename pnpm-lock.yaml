@@ -32,8 +32,8 @@ importers:
         specifier: ^20.11.24
         version: 20.14.10
       dotenv:
-        specifier: ^16.4.5
-        version: 16.4.5
+        specifier: ^17.4.2
+        version: 17.4.2
       oxfmt:
         specifier: ^0.51.0
         version: 0.51.0
@@ -1525,8 +1525,8 @@ packages:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
 
-  dotenv@16.4.5:
-    resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
+  dotenv@17.4.2:
+    resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
   dotenv@8.6.0:
@@ -4473,7 +4473,7 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
-  dotenv@16.4.5: {}
+  dotenv@17.4.2: {}
 
   dotenv@8.6.0: {}
 
