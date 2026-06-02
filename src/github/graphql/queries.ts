@@ -1,34 +1,37 @@
 // Octokit types are messy. To avoid adding any (peer)dependencies we rely on TS structural typing here
 export type GitHubClient = {
-    graphql: <T>(query: string, variables?: Record<string, unknown>) => Promise<T>;
-    rest: {
-      git: {
-        createRef: (params: {
-          owner: string;
-          repo: string;
-          ref: string;
-          sha: string;
-        }) => Promise<{ data: { node_id?: string } }>;
-        updateRef: (params: {
-          owner: string;
-          repo: string;
-          ref: string;
-          sha: string;
-          force?: boolean;
-        }) => Promise<{ data: { node_id?: string } }>;
-        deleteRef: (params: {
-          owner: string;
-          repo: string;
-          ref: string;
-        }) => Promise<unknown>;
-        getRef?: (params: {
-          owner: string;
-          repo: string;
-          ref: string;
-        }) => Promise<unknown>;
-      };
+  graphql: <T>(
+    query: string,
+    variables?: Record<string, unknown>,
+  ) => Promise<T>;
+  rest: {
+    git: {
+      createRef: (params: {
+        owner: string;
+        repo: string;
+        ref: string;
+        sha: string;
+      }) => Promise<{ data: { node_id?: string } }>;
+      updateRef: (params: {
+        owner: string;
+        repo: string;
+        ref: string;
+        sha: string;
+        force?: boolean;
+      }) => Promise<{ data: { node_id?: string } }>;
+      deleteRef: (params: {
+        owner: string;
+        repo: string;
+        ref: string;
+      }) => Promise<unknown>;
+      getRef?: (params: {
+        owner: string;
+        repo: string;
+        ref: string;
+      }) => Promise<unknown>;
     };
   };
+};
 
 import type {
   CreateCommitOnBranchMutation,
