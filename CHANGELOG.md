@@ -1,5 +1,11 @@
 # @changesets/ghcommit
 
+## 2.1.0
+
+### Minor Changes
+
+- [#70](https://github.com/changesets/ghcommit/pull/70) [`9f3d31c`](https://github.com/changesets/ghcommit/commit/9f3d31c91aada92e83efe99986f8632b16196e5b) Thanks [@Andarist](https://github.com/Andarist)! - Improve force-push handling so updating an existing branch no longer temporarily resets the target branch to the base commit, avoiding cases where GitHub closes open pull requests during the update.
+
 ## 2.0.1
 
 ### Patch Changes
