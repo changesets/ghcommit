@@ -1,6 +1,7 @@
-export type GitHubClient = ReturnType<
-  typeof import("@actions/github").getOctokit
->;
+import type { Octokit } from "@octokit/core"
+import type { Api } from "@octokit/plugin-rest-endpoint-methods"
+
+export type GitHubClient = Octokit & Api
 
 import type {
   CreateCommitOnBranchMutation,
