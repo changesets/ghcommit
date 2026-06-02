@@ -1,5 +1,11 @@
 # @changesets/ghcommit
 
+## 2.1.1
+
+### Patch Changes
+
+- [#81](https://github.com/changesets/ghcommit/pull/81) [`b425407`](https://github.com/changesets/ghcommit/commit/b425407fb483a6d7ce196614ef6c37142843bd43) Thanks [@Andarist](https://github.com/Andarist)! - Fixed an issue that caused GitHub types being bundled into the package and thus creating type incompatibilities in the dependent projects.
+
 ## 2.1.0
 
 ### Minor Changes
