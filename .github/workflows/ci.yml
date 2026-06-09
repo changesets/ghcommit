@@ -81,7 +81,7 @@ jobs:
 
       - name: Codegen
         run: pnpm codegen:github
-      
+
       - name: Typecheck
         run: pnpm typecheck
 
