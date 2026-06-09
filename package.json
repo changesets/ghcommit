@@ -48,13 +48,15 @@
     "access": "public"
   },
   "scripts": {
-    "build": "pnpm codegen:github && tsc && tsdown",
+    "build": "pnpm codegen:github && tsdown",
     "codegen:github": "graphql-codegen --config src/github/codegen.ts",
+    "typecheck": "tsc",
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
     "lint": "oxlint",
     "test:integration": "vitest -c vitest.integration.config.ts",
-    "version-packages": "pnpm changeset version && pnpm format:fix"
+    "version-packages": "changeset version && pnpm format:fix",
+    "release": "pnpm build && changeset publish"
   },
   "dependencies": {
     "isomorphic-git": "^1.36.3"
