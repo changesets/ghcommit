@@ -7,6 +7,9 @@ on:
   merge_group:
     branches:
       - main
+      - next
+      # merge group rulesets don't allow wildcards so in settings each maintenance branch needs to be added separately
+      - "maintenance/v*" # branch rulesets don't support v[0-9]+
 
 permissions:
   contents: read
@@ -16,39 +19,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build
+  lint-workflows:
+    name: Lint workflows
     runs-on: ubuntu-latest
+    permissions:
+      actions: read # only required in private repos
+      security-events: write # allow writing security events
     steps:
       - name: Check out repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/ci-setup
-
-      - name: Build
-        run: pnpm build
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
         with:
-          persist-credentials: false
-
-      - uses: ./.github/actions/ci-setup
-
-      - name: Codegen
-        run: pnpm codegen:github
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Format
-        run: pnpm format
+          persona: pedantic
+          annotations: true
+          advanced-security: false
 
   test:
     name: Test
@@ -81,12 +69,49 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/ci-setup
+
+      - name: Codegen
+        run: pnpm codegen:github
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/ci-setup
+
+      - name: Codegen
+        run: pnpm codegen:github
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format
+        run: pnpm format
+
   ci-ok:
     name: CI OK
     runs-on: ubuntu-latest
     if: always()
-    needs: [build, lint, test]
+    needs: [lint-workflows, test, typecheck, lint]
     steps:
       - name: Exit with error if some jobs are not successful
-        if: ${{ always() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
         run: exit 1
+        if: ${{ always() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
