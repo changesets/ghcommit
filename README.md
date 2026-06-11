@@ -1,5 +1,8 @@
 # `@changesets/ghcommit`
 
+> [!IMPORTANT]
+> This is the development branch for `@changesets/ghcommit` v3. For the v2 code, check out the [maintenance/v2](https://github.com/changesets/ghcommit/tree/maintenance/v2) branch.
+
 [![View on NPM](https://badgen.net/npm/v/@changesets/ghcommit)](https://www.npmjs.com/package/@changesets/ghcommit)
 
 NPM / TypeScript package to commit changes GitHub repositories using the GraphQL API.
