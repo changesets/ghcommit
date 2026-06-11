@@ -1,10 +1,7 @@
-import { configDotenv } from "dotenv";
 import { pino } from "pino";
 
 export const ROOT_TEST_BRANCH_PREFIX = process.env.ROOT_TEST_BRANCH_PREFIX!;
 export const ROOT_TEMP_DIRECTORY = process.env.ROOT_TEMP_DIRECTORY!;
-
-configDotenv();
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 if (!GITHUB_TOKEN) {
