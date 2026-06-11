@@ -16,7 +16,6 @@ process.env.ROOT_TEMP_DIRECTORY = ROOT_TEMP_DIRECTORY;
 
 export default defineConfig({
   test: {
-    environment: "node",
     globalSetup: ["./tests/integration/globalSetup.ts"],
     include: ["tests/integration/**/*.test.ts"],
   },

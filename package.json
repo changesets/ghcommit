@@ -54,6 +54,7 @@
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
     "lint": "oxlint",
+    "test:unit": "vitest",
     "test:integration": "vitest -c vitest.integration.config.ts",
     "version-packages": "changeset version && pnpm format:fix",
     "release": "pnpm build && changeset publish"
