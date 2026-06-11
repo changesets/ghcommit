@@ -11,7 +11,8 @@ export default defineConfig({
     "src/node.ts",
   ],
   outDir: "dist",
-  exports: false,
+  hash: false,
+  exports: true,
   // useful for running `build --watch` and `test` concurrently
   clean: !process.argv.includes("--watch"),
   deps: {
@@ -20,7 +21,7 @@ export default defineConfig({
 
   sourcemap: !isCi,
   dts: { enabled: true, parallel: !isCi, sourcemap: !isCi },
-  format: ["cjs", "esm"],
+  format: "esm",
   minify: "dce-only",
   platform: "node",
 
