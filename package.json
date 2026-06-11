@@ -23,26 +23,12 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
-    },
-    "./core": {
-      "import": "./dist/core.mjs",
-      "require": "./dist/core.cjs"
-    },
-    "./fs": {
-      "import": "./dist/fs.mjs",
-      "require": "./dist/fs.cjs"
-    },
-    "./git": {
-      "import": "./dist/git.mjs",
-      "require": "./dist/git.cjs"
-    },
-    "./node": {
-      "import": "./dist/node.mjs",
-      "require": "./dist/node.cjs"
-    }
+    ".": "./dist/index.mjs",
+    "./core": "./dist/core.mjs",
+    "./fs": "./dist/fs.mjs",
+    "./git": "./dist/git.mjs",
+    "./node": "./dist/node.mjs",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
