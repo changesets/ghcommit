@@ -59,7 +59,7 @@
     "release": "pnpm build && changeset publish"
   },
   "dependencies": {
-    "isomorphic-git": "^1.36.3"
+    "isomorphic-git": "^1.38.4"
   },
   "devDependencies": {
     "@actions/github": "^9.0.0",
