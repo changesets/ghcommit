@@ -16,7 +16,8 @@ process.env.ROOT_TEMP_DIRECTORY ??= path.join(
 
 export default defineConfig({
   test: {
-    environment: "node",
+    experimental: { preParse: true },
+    clearMocks: true,
     globalSetup: ["./tests/integration/globalSetup.ts"],
     include: ["tests/integration/**/*.test.ts"],
   },

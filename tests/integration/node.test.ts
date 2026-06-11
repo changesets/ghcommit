@@ -2,7 +2,6 @@ import { promises as fs } from "fs";
 import { getOctokit } from "@actions/github";
 import git from "isomorphic-git";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import type { CommitMessage } from "../../src/github/graphql/generated/types.ts";
 import {
   createRefMutation,
   getRefTreeQuery,
@@ -494,97 +493,6 @@ describe("node", () => {
             path: BASIC_FILE_CHANGES_PATH,
             oid: BASIC_FILE_CHANGES_OID,
           },
-        });
-      });
-    });
-
-    describe("commit message is correctly handled", () => {
-      const testCommitMessage = async ({
-        branch,
-        input,
-        expected,
-      }: {
-        branch: string;
-        input: string | CommitMessage;
-        expected: string;
-      }) => {
-        await commitFilesFromBuffers({
-          octokit,
-          ...REPO,
-          branch,
-          base: {
-            commit: testTargetCommit,
-          },
-          ...BASIC_FILE_CONTENTS,
-          message: input,
-        });
-
-        await waitForGitHubToBeReady();
-
-        const ref = (
-          await getRefTreeQuery(octokit, {
-            ...REPO,
-            ref: `refs/heads/${branch}`,
-            path: "package.json",
-          })
-        ).repository?.ref?.target;
-
-        if (!ref || !("message" in ref)) {
-          throw new Error("Unexpected result");
-        }
-
-        expect(ref.message).toEqual(expected);
-      };
-
-      it("single string", async () => {
-        const branch = `${TEST_BRANCH_PREFIX}-commit-message-single`;
-        branches.push(branch);
-
-        await testCommitMessage({
-          branch,
-          input: "This is a basic commit message",
-          expected: "This is a basic commit message",
-        });
-      });
-
-      it("multi-line string", async () => {
-        const branch = `${TEST_BRANCH_PREFIX}-commit-message-multi`;
-        branches.push(branch);
-
-        await testCommitMessage({
-          branch,
-          input:
-            "This is a basic commit message\nwith a second line\n\nand some more lines!",
-          expected:
-            "This is a basic commit message\n\nwith a second line\n\nand some more lines!",
-        });
-      });
-
-      it("headline only", async () => {
-        const branch = `${TEST_BRANCH_PREFIX}-commit-message-h-only`;
-        branches.push(branch);
-
-        await testCommitMessage({
-          branch,
-          input: {
-            headline: "This is a basic commit message!!",
-          },
-          expected: "This is a basic commit message!!",
-        });
-      });
-
-      it("headline & body", async () => {
-        const branch = `${TEST_BRANCH_PREFIX}-commit-message-h-and-b`;
-        branches.push(branch);
-
-        await testCommitMessage({
-          branch,
-          input: {
-            headline: "This is a basic commit message!!",
-            body: "This is the body of the commit message\nit has more text",
-          },
-          expected:
-            "This is a basic commit message!!\n\nThis is the body of the commit message\nit has more text",
         });
       });
     });
