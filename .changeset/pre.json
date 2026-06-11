@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "@changesets/ghcommit": "2.1.1"
+  },
+  "changesets": []
+}

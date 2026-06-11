@@ -23,26 +23,12 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
-    },
-    "./core": {
-      "import": "./dist/core.mjs",
-      "require": "./dist/core.cjs"
-    },
-    "./fs": {
-      "import": "./dist/fs.mjs",
-      "require": "./dist/fs.cjs"
-    },
-    "./git": {
-      "import": "./dist/git.mjs",
-      "require": "./dist/git.cjs"
-    },
-    "./node": {
-      "import": "./dist/node.mjs",
-      "require": "./dist/node.cjs"
-    }
+    ".": "./dist/index.mjs",
+    "./core": "./dist/core.mjs",
+    "./fs": "./dist/fs.mjs",
+    "./git": "./dist/git.mjs",
+    "./node": "./dist/node.mjs",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
@@ -69,7 +55,6 @@
     "@graphql-codegen/cli": "^7.0.0",
     "@tsconfig/node22": "^22.0.5",
     "@types/node": "^20.11.24",
-    "dotenv": "^16.4.5",
     "oxfmt": "^0.51.0",
     "oxlint": "^1.63.0",
     "oxlint-tsgolint": "^0.22.1",
@@ -79,6 +64,9 @@
     "tsdown": "^0.22.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
+  },
+  "engines": {
+    "node": "^22.11 || ^24 || >=26"
   },
   "packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499"
 }

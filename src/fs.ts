@@ -1,7 +1,7 @@
 import { promises as fs } from "fs";
 import * as path from "path";
-import type { FileAddition } from "./github/graphql/generated/types.ts";
 import type {
+  CommitFilesFromBuffersArgs,
   CommitFilesFromDirectoryArgs,
   CommitFilesResult,
 } from "./interface.ts";
@@ -12,14 +12,15 @@ export const commitFilesFromDirectory = async ({
   fileChanges,
   ...otherArgs
 }: CommitFilesFromDirectoryArgs): Promise<CommitFilesResult> => {
-  const additions: FileAddition[] = await Promise.all(
-    (fileChanges.additions || []).map(async (p) => {
-      return {
-        path: p,
-        contents: await fs.readFile(path.join(cwd, p)),
-      };
-    }),
-  );
+  const additions: CommitFilesFromBuffersArgs["fileChanges"]["additions"] =
+    await Promise.all(
+      (fileChanges.additions || []).map(async (p) => {
+        return {
+          path: p,
+          contents: await fs.readFile(path.join(cwd, p)),
+        };
+      }),
+    );
 
   return commitFilesFromBuffers({
     ...otherArgs,
