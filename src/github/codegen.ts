@@ -17,6 +17,22 @@ if (process.env.CI || !fs.existsSync(schemaPath)) {
   fs.writeFileSync(schemaPath, await result.text());
 }
 
+const scalars = {
+  Base64String: "string",
+  BigInt: "string",
+  CustomPropertyValue: "string",
+  Date: "string",
+  DateTime: "string",
+  GitObjectID: "string",
+  GitRefname: "string",
+  GitSSHRemote: "string",
+  GitTimestamp: "string",
+  HTML: "string",
+  PreciseDateTime: "string",
+  URI: "string",
+  X509Certificate: "string",
+};
+
 const config: CodegenConfig = {
   schema: schemaPath,
   documents: ["src/github/graphql/queries.ts"],
@@ -24,16 +40,16 @@ const config: CodegenConfig = {
     "src/github/graphql/generated/types.ts": {
       plugins: ["typescript"],
       config: {
-        // TODO: Look into adding stricter types or use `unknown`
-        defaultScalarType: "any",
+        scalars,
+        strictScalars: true,
         enumsAsTypes: true,
       },
     },
     "src/github/graphql/generated/operations.ts": {
       plugins: ["typescript-operations"],
       config: {
-        // TODO: Look into adding stricter types or use `unknown`
-        defaultScalarType: "any",
+        scalars,
+        strictScalars: true,
         importSchemaTypesFrom: "src/github/graphql/generated/types.ts",
         importExtension: ".ts",
       },
