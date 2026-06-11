@@ -1,5 +1,4 @@
 import type { GetRepositoryMetadataQuery } from "./github/graphql/generated/operations.js";
-import type { CommitMessage } from "./github/graphql/generated/types.ts";
 import {
   createCommitOnBranchQuery,
   getRepositoryMetadata,
@@ -9,6 +8,7 @@ import type {
   CommitFilesResult,
   GitBase,
 } from "./interface.ts";
+import { normalizeCommitMessage } from "./utils.ts";
 
 const getBaseRef = (base: GitBase): string => {
   if ("branch" in base) {
@@ -62,14 +62,6 @@ const createCommit = async ({
   refId: string;
   baseOid: string;
 }) => {
-  const normalizedMessage: CommitMessage =
-    typeof message === "string"
-      ? {
-          headline: message.split("\n")[0]?.trim() ?? "",
-          body: message.split("\n").slice(1).join("\n").trim(),
-        }
-      : message;
-
   // we have to stick to GraphQL here as with REST, each file change would become a separate API call
   return createCommitOnBranchQuery(octokit, {
     input: {
@@ -77,7 +69,7 @@ const createCommit = async ({
         id: refId,
       },
       expectedHeadOid: baseOid,
-      message: normalizedMessage,
+      message: normalizeCommitMessage(message),
       fileChanges,
     },
   });
