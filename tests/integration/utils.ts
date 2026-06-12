@@ -34,9 +34,10 @@ export async function waitForGitHubToBeReady() {
   return await new Promise((r) => setTimeout(r, 5000));
 }
 
-const runId = crypto.randomBytes(4).toString("hex");
+const runHash = crypto.randomBytes(4).toString("hex");
+const runId = process.env.GITHUB_RUN_ID ?? "local";
 export function getTempBranch(name: string) {
-  return `changesets-ghcommit-test-${runId}/${name}`;
+  return `changesets-ghcommit-test-${runHash}-id-${runId}/${name}`;
 }
 
 /**
