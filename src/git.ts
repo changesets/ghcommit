@@ -1,12 +1,12 @@
 import { promises as fs } from "fs";
 import { relative, resolve } from "path";
 import git from "isomorphic-git";
+import { commitFilesFromBase64 } from "./core.ts";
 import type {
   CommitChangesFromRepoArgs,
-  CommitFilesFromBuffersArgs,
+  CommitFilesFromBase64Args,
   CommitFilesResult,
 } from "./interface.ts";
-import { commitFilesFromBuffers } from "./node.ts";
 
 /**
  * @see https://isomorphic-git.org/docs/en/walk#walkerentry-mode
@@ -23,7 +23,6 @@ export const commitChangesFromRepo = async ({
   cwd: workingDirectory,
   recursivelyFindRoot = true,
   filterFiles,
-  log,
   ...otherArgs
 }: CommitChangesFromRepoArgs): Promise<CommitFilesResult> => {
   const ref = base?.commit ?? "HEAD";
@@ -44,6 +43,27 @@ export const commitChangesFromRepo = async ({
     throw new Error(`Could not determine oid for ${ref}`);
   }
 
+  return await commitFilesFromBase64({
+    ...otherArgs,
+    fileChanges: await getFileChanges(
+      workingDirectory,
+      repoRoot,
+      oid,
+      filterFiles,
+    ),
+    base: {
+      commit: oid,
+    },
+  });
+};
+
+// Exported for testing only
+export async function getFileChanges(
+  cwd: string,
+  repoRoot: string,
+  ref: string,
+  filterFiles?: CommitChangesFromRepoArgs["filterFiles"],
+): Promise<CommitFilesFromBase64Args["fileChanges"]> {
   /**
    * The directory to add files from. This is relative to the repository
    * root, and is used to filter files.
@@ -52,13 +72,10 @@ export const commitChangesFromRepo = async ({
     cwd === repoRoot ? null : relative(repoRoot, cwd) + "/";
 
   // Determine changed files
-  const trees = [git.TREE({ ref: oid }), git.WORKDIR()];
-  const additions: CommitFilesFromBuffersArgs["fileChanges"]["additions"] = [];
-  const deletions: CommitFilesFromBuffersArgs["fileChanges"]["deletions"] = [];
-  const fileChanges = {
-    additions,
-    deletions,
-  };
+  const trees = [git.TREE({ ref }), git.WORKDIR()];
+  const additions: CommitFilesFromBase64Args["fileChanges"]["additions"] = [];
+  const deletions: CommitFilesFromBase64Args["fileChanges"]["deletions"] = [];
+
   await git.walk({
     fs,
     dir: repoRoot,
@@ -115,7 +132,7 @@ export const commitChangesFromRepo = async ({
       }
       if (!workdir) {
         // File was deleted
-        deletions.push(filepath);
+        deletions.push({ path: filepath });
         return null;
       } else {
         // File was added / updated
@@ -125,19 +142,12 @@ export const commitChangesFromRepo = async ({
         }
         additions.push({
           path: filepath,
-          contents: Buffer.from(arr),
+          contents: Buffer.from(arr).toString("base64"),
         });
       }
       return true;
     },
   });
 
-  return commitFilesFromBuffers({
-    ...otherArgs,
-    fileChanges,
-    log,
-    base: {
-      commit: oid,
-    },
-  });
-};
+  return { additions, deletions };
+}
