@@ -149,5 +149,8 @@ export async function getFileChanges(
     },
   });
 
+  additions.sort((a, b) => a.path.localeCompare(b.path));
+  deletions.sort((a, b) => a.path.localeCompare(b.path));
+
   return { additions, deletions };
 }
