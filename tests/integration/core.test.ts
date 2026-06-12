@@ -39,7 +39,7 @@ const BASIC_FILE_CHANGES = {
 
 // Match branch name as in core.ts
 function getInternalTempBranch(name: string) {
-  return `changesets-ghcommit-test/${name}`;
+  return `changesets-ghcommit-temp/${name}`;
 }
 
 describe("commitFilesFromBase64", () => {
