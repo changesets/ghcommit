@@ -34,6 +34,9 @@ importers:
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1
+      fs-fixture:
+        specifier: ^2.14.0
+        version: 2.14.0
       oxfmt:
         specifier: ^0.53.0
         version: 0.53.0
@@ -52,6 +55,9 @@ importers:
       publint:
         specifier: ^0.3.21
         version: 0.3.21
+      tinyexec:
+        specifier: ^1.2.4
+        version: 1.2.4
       tsdown:
         specifier: ^0.22.1
         version: 0.22.1(publint@0.3.21)(typescript@6.0.3)
@@ -1593,6 +1599,10 @@ packages:
   fs-extra@8.1.0:
     resolution: {integrity: sha512-yhlQgA6mnOJUKOsRUFsgJdQCvkKhcz8tlZG5HBQfReYZy46OwLcY+Zia0mtdHsOo9y/hP+CxMN0TU9QxoOtG4g==}
     engines: {node: '>=6 <7 || >=8'}
+
+  fs-fixture@2.14.0:
+    resolution: {integrity: sha512-lZBaSOewY5snBSyOjn3fmo2ES5gOR7Q1Y6dILH0/xR0xejjUhux65OGaFWhQ+jiyvTi5HOHqXQrQ9v48Lsmqbw==}
+    engines: {node: '>=18.0.0'}
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -4326,6 +4336,8 @@ snapshots:
       graceful-fs: 4.2.11
       jsonfile: 4.0.0
       universalify: 0.1.2
+
+  fs-fixture@2.14.0: {}
 
   fsevents@2.3.3:
     optional: true

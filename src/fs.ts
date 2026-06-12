@@ -1,32 +1,37 @@
 import { promises as fs } from "fs";
 import * as path from "path";
+import { commitFilesFromBase64 } from "./core.ts";
 import type {
-  CommitFilesFromBuffersArgs,
+  CommitFilesFromBase64Args,
   CommitFilesFromDirectoryArgs,
   CommitFilesResult,
 } from "./interface.ts";
-import { commitFilesFromBuffers } from "./node.ts";
 
-export const commitFilesFromDirectory = async ({
+export async function commitFilesFromDirectory({
   cwd,
   fileChanges,
   ...otherArgs
-}: CommitFilesFromDirectoryArgs): Promise<CommitFilesResult> => {
-  const additions: CommitFilesFromBuffersArgs["fileChanges"]["additions"] =
-    await Promise.all(
-      (fileChanges.additions || []).map(async (p) => {
-        return {
-          path: p,
-          contents: await fs.readFile(path.join(cwd, p)),
-        };
-      }),
-    );
-
-  return commitFilesFromBuffers({
+}: CommitFilesFromDirectoryArgs): Promise<CommitFilesResult> {
+  return await commitFilesFromBase64({
     ...otherArgs,
-    fileChanges: {
-      additions,
-      deletions: fileChanges.deletions,
-    },
+    fileChanges: await normalizeFileChanges(fileChanges, cwd),
   });
-};
+}
+
+// Exported for testing only
+export async function normalizeFileChanges(
+  fileChanges: CommitFilesFromDirectoryArgs["fileChanges"],
+  cwd: string,
+): Promise<CommitFilesFromBase64Args["fileChanges"]> {
+  return {
+    additions: fileChanges.additions
+      ? await Promise.all(
+          fileChanges.additions.map(async (a) => ({
+            path: a,
+            contents: await fs.readFile(path.join(cwd, a), "base64"),
+          })),
+        )
+      : undefined,
+    deletions: fileChanges.deletions?.map((d) => ({ path: d })),
+  };
+}
