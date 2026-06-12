@@ -1,6 +1,3 @@
-import { randomBytes } from "node:crypto";
-import os from "node:os";
-import path from "node:path";
 import { loadEnvFile } from "node:process";
 import { defineConfig } from "vitest/config";
 
@@ -8,17 +5,18 @@ try {
   loadEnvFile();
 } catch {}
 
-process.env.ROOT_TEST_BRANCH_PREFIX ??= `test-${randomBytes(4).toString("hex")}`;
-process.env.ROOT_TEMP_DIRECTORY ??= path.join(
-  os.tmpdir(),
-  process.env.ROOT_TEST_BRANCH_PREFIX,
-);
+if (!process.env.GITHUB_TOKEN) {
+  throw new Error("GITHUB_TOKEN must be set");
+}
+if (!process.env.GITHUB_REPOSITORY) {
+  throw new Error("GITHUB_REPOSITORY must be set");
+}
 
 export default defineConfig({
   test: {
     experimental: { preParse: true },
     clearMocks: true,
-    globalSetup: ["./tests/integration/globalSetup.ts"],
-    include: ["tests/integration/**/*.test.ts"],
+    testTimeout: 60_000,
+    include: ["tests/integration/*.test.ts"],
   },
 });
