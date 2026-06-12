@@ -80,24 +80,22 @@ describe("commitFilesFromBase64", () => {
     repositoryId = response.id;
 
     // Get recent 2 commits to perform tests on
-    const result = await exec(
+    const logOutput = await exec(
       "git",
       ["log", "-n", "2", "--pretty=format:%H %T"],
-      {
-        nodeOptions: { cwd: process.cwd() },
-      },
+      { nodeOptions: { cwd: process.cwd() } },
     );
-    const log = result.stdout
+    const logs = logOutput.stdout
       .trim()
       .split("\n")
       .map((line) => {
         const [oid, tree] = line.split(" ");
-        return { oid, commit: { tree } };
+        return { oid, tree };
       });
 
-    testTargetCommit = log[1]?.oid ?? "N/A";
-    testTargetCommit2 = log[0]?.oid ?? "N/A";
-    testTargetTree2 = log[0]?.commit.tree ?? "N/A";
+    testTargetCommit = logs[1]?.oid ?? "N/A";
+    testTargetCommit2 = logs[0]?.oid ?? "N/A";
+    testTargetTree2 = logs[0]?.tree ?? "N/A";
   });
 
   it("can commit files", async () => {
