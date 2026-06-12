@@ -45,6 +45,7 @@ function getInternalTempBranch(name: string) {
 describe("commitFilesFromBase64", () => {
   let repositoryId: string;
   let testTargetCommit: string;
+
   /**
    * For tests, important that this commit is not an ancestor of TEST_TARGET_COMMIT,
    * to ensure that non-fast-forward pushes are tested
@@ -159,6 +160,7 @@ describe("commitFilesFromBase64", () => {
     onTestFinished(() => deleteBranch(branch));
 
     const buffers = {
+      "1KiB": Buffer.alloc(1024, "Hello, world!"),
       "1MiB": Buffer.alloc(1024 * 1024, "Hello, world!"),
       "10MiB": Buffer.alloc(1024 * 1024 * 10, "Hello, world!"),
     };
