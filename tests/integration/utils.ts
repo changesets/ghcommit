@@ -158,30 +158,31 @@ export async function expectBranchDoesNotExist(branch: string) {
 
 // #region Octokit helpers
 
-export async function deleteBranch(branch: string) {
-  console.debug(`Deleting branch ${branch}`);
-  // Get Ref
-  const ref = await getRepositoryMetadata(octokit, {
-    owner,
-    repo,
-    baseRef: `refs/heads/${branch}`,
-    targetRef: `refs/heads/${branch}`,
-  });
+export async function deleteBranch(branch: string, allowNotExist = false) {
+  try {
+    const ref = await getRepositoryMetadata(octokit, {
+      owner,
+      repo,
+      baseRef: `refs/heads/${branch}`,
+      targetRef: `refs/heads/${branch}`,
+    });
 
-  const refId = ref?.baseRef?.id;
+    const refId = ref?.baseRef?.id;
+    if (!refId) {
+      if (!allowNotExist) {
+        console.warn(`Branch ${branch} not found`);
+      }
+      return;
+    }
 
-  if (!refId) {
-    console.warn(`Branch ${branch} not found`);
-    return;
+    await deleteRefMutation(octokit, {
+      input: {
+        refId,
+      },
+    });
+  } catch (error) {
+    console.error(`Failed to delete branch ${branch}:`, error);
   }
-
-  await deleteRefMutation(octokit, {
-    input: {
-      refId,
-    },
-  });
-
-  console.debug(`Deleted branch ${branch}`);
 }
 
 // #endregion

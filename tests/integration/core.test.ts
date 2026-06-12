@@ -37,6 +37,11 @@ const BASIC_FILE_CHANGES = {
   ],
 };
 
+// Match branch name as in core.ts
+function getInternalTempBranch(name: string) {
+  return `changesets-ghcommit-test/${name}`;
+}
+
 describe("commitFilesFromBase64", () => {
   let repositoryId: string;
   let testTargetCommit: string;
@@ -247,7 +252,9 @@ describe("commitFilesFromBase64", () => {
   describe("existing branches", () => {
     it("can commit to existing branch when force is true", async () => {
       const branch = getTempBranch("existing-branch-force");
+      const internalTempBranch = getInternalTempBranch(branch);
       onTestFinished(() => deleteBranch(branch));
+      onTestFinished(() => deleteBranch(internalTempBranch, true));
 
       // Create an exiting branch
       await createRefMutation(octokit, {
@@ -273,13 +280,14 @@ describe("commitFilesFromBase64", () => {
       });
 
       await expectParentHasOid({ branch, oid: testTargetCommit });
+      await expectBranchDoesNotExist(internalTempBranch);
     });
 
     it("cleans up a pre-existing temporary branch when force is true", async () => {
       const branch = getTempBranch("existing-branch-force-existing-temp");
-      const tempBranch = getTempBranch(`temp-${branch}`);
+      const internalTempBranch = getInternalTempBranch(branch);
       onTestFinished(() => deleteBranch(branch));
-      onTestFinished(() => deleteBranch(tempBranch));
+      onTestFinished(() => deleteBranch(internalTempBranch, true));
 
       await createRefMutation(octokit, {
         input: {
@@ -292,7 +300,7 @@ describe("commitFilesFromBase64", () => {
       await createRefMutation(octokit, {
         input: {
           repositoryId,
-          name: `refs/heads/${tempBranch}`,
+          name: `refs/heads/${internalTempBranch}`,
           oid: testTargetCommit2,
         },
       });
@@ -312,7 +320,7 @@ describe("commitFilesFromBase64", () => {
       });
 
       await expectParentHasOid({ branch, oid: testTargetCommit });
-      await expectBranchDoesNotExist(tempBranch);
+      await expectBranchDoesNotExist(internalTempBranch);
     });
 
     it("cannot commit to existing branch when force is false", async () => {
