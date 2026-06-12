@@ -38,8 +38,26 @@ jobs:
           annotations: true
           advanced-security: false
 
-  test:
-    name: Test
+  test-unit:
+    name: Test Unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/ci-setup
+
+      - name: Build
+        run: pnpm build
+
+      - name: Unit tests
+        run: pnpm test:unit
+
+  test-integration:
+    name: Test Integration
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # Integration tests push to the repo, which requires a token with write
@@ -64,9 +82,6 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Unit tests
-        run: pnpm test:unit
-
       - name: Integration tests
         run: pnpm test:integration
         env:
@@ -75,7 +90,7 @@ jobs:
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -92,7 +107,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -113,7 +128,7 @@ jobs:
     name: CI OK
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint-workflows, test, typecheck, lint]
+    needs: [lint-workflows, test-unit, test-integration, typecheck, lint]
     steps:
       - name: Exit with error if some jobs are not successful
         run: exit 1
