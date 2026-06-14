@@ -17,11 +17,9 @@ export const commitChangesFromRepo = async ({
 }: CommitChangesFromRepoArgs): Promise<CommitFilesResult> => {
   const ref = base?.commit ?? "HEAD";
   const cwd = path.resolve(workingDirectory);
-  const repoRoot = recursivelyFindRoot
-    ? ((await findGitRoot(cwd)) ?? cwd)
-    : cwd;
+  const repoRoot = recursivelyFindRoot ? await findGitRoot(cwd) : cwd;
 
-  const refOid = await getOidForRef(ref, repoRoot);
+  const refOid = await getOidForRef(repoRoot, ref);
   if (!refOid) {
     throw new Error(`Could not determine oid for ref ${ref}`);
   }
@@ -74,8 +72,8 @@ export async function getFileChanges(
         `Unexpected symlink at ${filePath}, GitHub API only supports files and directories. You may need to add this file to .gitignore`,
       );
     }
-    // Test executable files
-    if (stat.mode & 0o111) {
+    const isFileExecutable = (stat.mode & 0o111) !== 0;
+    if (isFileExecutable) {
       throw new Error(
         `Unexpected executable file at ${filePath}, GitHub API only supports non-executable files and directories. You may need to add this file to .gitignore`,
       );
@@ -141,13 +139,10 @@ export async function getFileChanges(
   additions.sort((a, b) => (a.path > b.path ? 1 : -1));
   deletions.sort((a, b) => (a.path > b.path ? 1 : -1));
 
-  additions.sort((a, b) => (a.path > b.path ? 1 : -1));
-  deletions.sort((a, b) => (a.path > b.path ? 1 : -1));
-
   return { additions, deletions };
 }
 
-async function getOidForRef(ref: string, cwd: string): Promise<string | null> {
+async function getOidForRef(cwd: string, ref: string): Promise<string | null> {
   try {
     const { stdout } = await exec("git", ["rev-parse", ref], {
       throwOnError: true,
@@ -159,20 +154,14 @@ async function getOidForRef(ref: string, cwd: string): Promise<string | null> {
   }
 }
 
-async function findGitRoot(start: string): Promise<string | null> {
-  let current = start;
-  while (true) {
-    try {
-      const stat = await fs.stat(path.join(current, ".git"));
-      if (stat.isDirectory()) {
-        return current;
-      }
-    } catch {
-      // Ignore errors and continue searching
-    }
-    const parent = path.dirname(current);
-    if (parent === current) break;
-    current = parent;
+async function findGitRoot(cwd: string): Promise<string> {
+  try {
+    const { stdout } = await exec("git", ["rev-parse", "--git-dir"], {
+      throwOnError: true,
+      nodeOptions: { cwd },
+    });
+    return path.resolve(cwd, stdout.trim());
+  } catch {
+    return cwd;
   }
-  return null;
 }
