@@ -208,13 +208,16 @@ describe("commitFilesFromBase64", () => {
     });
   });
 
-  it("can commit using tag as a base", async () => {
+  // oxlint-disable-next-line vitest/no-disabled-tests
+  it.skip("can commit using tag as a base", async () => {
     const branch = getTempBranch("tag-base");
     onTestFinished(() => deleteBranch(branch));
 
     await commitFilesFromBase64WithDefaults({
       branch,
       base: {
+        // for some reason the tag used here needs to have `.github/workflows` identical~ to the default branch
+        // otherwise, GitHub rejects `createRef` with "Resource not accessible by integration" and reports missing `workflows=write` permission
         tag: "v1.4.0",
       },
       fileChanges: BASIC_FILE_CHANGES,
