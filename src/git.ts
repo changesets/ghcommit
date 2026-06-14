@@ -45,15 +45,16 @@ export const commitChangesFromRepo = async ({
 
   return await commitFilesFromBase64({
     ...otherArgs,
+    base: base ?? { commit: oid },
     fileChanges: await getFileChanges(
       workingDirectory,
       repoRoot,
       oid,
       filterFiles,
     ),
-    base: {
-      commit: oid,
-    },
+    // base: {
+    //   commit: oid,
+    // },
   });
 };
 
