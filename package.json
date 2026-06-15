@@ -46,7 +46,7 @@
     "release": "pnpm build && changeset publish"
   },
   "dependencies": {
-    "isomorphic-git": "^1.36.3"
+    "tinyexec": "^1.2.4"
   },
   "devDependencies": {
     "@actions/github": "^9.0.0",
@@ -62,7 +62,6 @@
     "pino": "^9.3.2",
     "pino-pretty": "^11.2.2",
     "publint": "^0.3.21",
-    "tinyexec": "^1.2.4",
     "tsdown": "^0.22.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"

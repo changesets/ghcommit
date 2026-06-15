@@ -1,22 +1,12 @@
-import { promises as fs } from "fs";
-import { relative, resolve } from "path";
-import git from "isomorphic-git";
+import fs from "node:fs/promises";
+import path from "path";
+import { exec } from "tinyexec";
 import { commitFilesFromBase64 } from "./core.ts";
 import type {
   CommitChangesFromRepoArgs,
   CommitFilesFromBase64Args,
   CommitFilesResult,
 } from "./interface.ts";
-
-/**
- * @see https://isomorphic-git.org/docs/en/walk#walkerentry-mode
- */
-const FILE_MODES = {
-  directory: 0o40000,
-  file: 0o100644,
-  executableFile: 0o100755,
-  symlink: 0o120000,
-} as const;
 
 export const commitChangesFromRepo = async ({
   base,
@@ -26,21 +16,12 @@ export const commitChangesFromRepo = async ({
   ...otherArgs
 }: CommitChangesFromRepoArgs): Promise<CommitFilesResult> => {
   const ref = base?.commit ?? "HEAD";
-  const cwd = resolve(workingDirectory);
-  const repoRoot = recursivelyFindRoot
-    ? await git.findRoot({ fs, filepath: cwd })
-    : cwd;
-  const gitLog = await git.log({
-    fs,
-    dir: repoRoot,
-    ref,
-    depth: 1,
-  });
+  const cwd = path.resolve(workingDirectory);
+  const repoRoot = recursivelyFindRoot ? await findGitRoot(cwd) : cwd;
 
-  const oid = gitLog[0]?.oid;
-
-  if (!oid) {
-    throw new Error(`Could not determine oid for ${ref}`);
+  const refOid = await getOidForRef(repoRoot, ref);
+  if (!refOid) {
+    throw new Error(`Could not determine oid for ref ${ref}`);
   }
 
   return await commitFilesFromBase64({
@@ -48,11 +29,11 @@ export const commitChangesFromRepo = async ({
     fileChanges: await getFileChanges(
       workingDirectory,
       repoRoot,
-      oid,
+      refOid,
       filterFiles,
     ),
     base: {
-      commit: oid,
+      commit: refOid,
     },
   });
 };
@@ -69,88 +50,118 @@ export async function getFileChanges(
    * root, and is used to filter files.
    */
   const relativeStartDirectory =
-    cwd === repoRoot ? null : relative(repoRoot, cwd) + "/";
+    cwd === repoRoot ? null : path.relative(repoRoot, cwd) + "/";
 
-  // Determine changed files
-  const trees = [git.TREE({ ref }), git.WORKDIR()];
   const additions: CommitFilesFromBase64Args["fileChanges"]["additions"] = [];
   const deletions: CommitFilesFromBase64Args["fileChanges"]["deletions"] = [];
 
-  await git.walk({
-    fs,
-    dir: repoRoot,
-    trees,
-    map: async (filepath, [commit, workdir]) => {
-      // Don't include ignored files
-      if (
-        await git.isIgnored({
-          fs,
-          dir: repoRoot,
-          filepath,
-        })
-      ) {
-        return null;
-      }
-      const prevOid = await commit?.oid();
-      const currentOid = await workdir?.oid();
-      // Don't include files that haven't changed, and exist in both trees
-      if (prevOid === currentOid && !commit === !workdir) {
-        return null;
-      }
-      if (
-        (await commit?.mode()) === FILE_MODES.symlink ||
-        (await workdir?.mode()) === FILE_MODES.symlink
-      ) {
-        throw new Error(
-          `Unexpected symlink at ${filepath}, GitHub API only supports files and directories. You may need to add this file to .gitignore`,
-        );
-      }
-      if ((await workdir?.mode()) === FILE_MODES.executableFile) {
-        throw new Error(
-          `Unexpected executable file at ${filepath}, GitHub API only supports non-executable files and directories. You may need to add this file to .gitignore`,
-        );
-      }
-      // Iterate through anything that may be a directory in either the
-      // current commit or the working directory
-      if (
-        (await commit?.type()) === "tree" ||
-        (await workdir?.type()) === "tree"
-      ) {
-        // Iterate through these directories
-        return true;
-      }
-      if (
-        relativeStartDirectory &&
-        !filepath.startsWith(relativeStartDirectory)
-      ) {
-        // Ignore files that are not in the specified directory
-        return null;
-      }
-      if (filterFiles && !filterFiles(filepath)) {
-        // Ignore out files that don't match any specified filter
-        return null;
-      }
-      if (!workdir) {
-        // File was deleted
-        deletions.push({ path: filepath });
-        return null;
-      } else {
-        // File was added / updated
-        const arr = await workdir.content();
-        if (!arr) {
-          throw new Error(`Could not determine content of file ${filepath}`);
-        }
-        additions.push({
-          path: filepath,
-          contents: Buffer.from(arr).toString("base64"),
-        });
-      }
-      return true;
-    },
-  });
+  const addPath = async (filePath: string) => {
+    if (
+      relativeStartDirectory &&
+      !filePath.startsWith(relativeStartDirectory)
+    ) {
+      return;
+    }
+    if (filterFiles && !filterFiles(filePath)) {
+      return;
+    }
+    const resolvedFilePath = path.join(repoRoot, filePath);
+    const stat = await fs.lstat(resolvedFilePath);
+    if (stat.isSymbolicLink()) {
+      throw new Error(
+        `Unexpected symlink at ${filePath}, GitHub API only supports files and directories. You may need to add this file to .gitignore`,
+      );
+    }
+    const isFileExecutable = (stat.mode & 0o111) !== 0;
+    if (isFileExecutable) {
+      throw new Error(
+        `Unexpected executable file at ${filePath}, GitHub API only supports non-executable files and directories. You may need to add this file to .gitignore`,
+      );
+    }
+
+    additions.push({
+      path: filePath,
+      contents: await fs.readFile(resolvedFilePath, "base64"),
+    });
+  };
+
+  const deletePath = (filePath: string) => {
+    if (
+      relativeStartDirectory &&
+      !filePath.startsWith(relativeStartDirectory)
+    ) {
+      return;
+    }
+    if (filterFiles && !filterFiles(filePath)) {
+      return;
+    }
+
+    deletions.push({ path: filePath });
+  };
+
+  // `diffResult` returns all files that have changed since the ref, except untracked files.
+  // `untrackedResult` returns the untracked files, treating as new additions.
+  const [diffResult, untrackedResult] = await Promise.all([
+    exec("git", ["diff", "--name-status", "--diff-filter=ACDMRT", ref], {
+      throwOnError: true,
+      nodeOptions: { cwd: repoRoot },
+    }),
+    exec("git", ["ls-files", "--others", "--exclude-standard"], {
+      throwOnError: true,
+      nodeOptions: { cwd: repoRoot },
+    }),
+  ]);
+
+  for (const line of diffResult.stdout.trim().split("\n")) {
+    if (!line) continue;
+    const [status, ...paths] = line.split("\t");
+
+    if (status.startsWith("R") || status.startsWith("C")) {
+      const [oldPath, newPath] = paths;
+      deletePath(oldPath);
+      await addPath(newPath);
+      continue;
+    }
+
+    const filePath = paths[0];
+    if (status === "D") {
+      deletePath(filePath);
+    } else {
+      await addPath(filePath);
+    }
+  }
+
+  for (const filePath of untrackedResult.stdout.trim().split("\n")) {
+    if (!filePath) continue;
+    await addPath(filePath);
+  }
 
   additions.sort((a, b) => (a.path > b.path ? 1 : -1));
   deletions.sort((a, b) => (a.path > b.path ? 1 : -1));
 
   return { additions, deletions };
+}
+
+async function getOidForRef(cwd: string, ref: string): Promise<string | null> {
+  try {
+    const { stdout } = await exec("git", ["rev-parse", ref], {
+      throwOnError: true,
+      nodeOptions: { cwd },
+    });
+    return stdout.trim();
+  } catch {
+    return null;
+  }
+}
+
+async function findGitRoot(cwd: string): Promise<string> {
+  try {
+    const { stdout } = await exec("git", ["rev-parse", "--git-dir"], {
+      throwOnError: true,
+      nodeOptions: { cwd },
+    });
+    return path.resolve(cwd, stdout.trim());
+  } catch {
+    return cwd;
+  }
 }
