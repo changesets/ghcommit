@@ -3,16 +3,10 @@ import { defineConfig } from "tsdown/config";
 const isCi = process.env.CI != null;
 
 export default defineConfig({
-  entry: [
-    "src/index.ts",
-    "src/core.ts",
-    "src/git.ts",
-    "src/fs.ts",
-    "src/node.ts",
-  ],
+  entry: ["src/index-browser.ts", "src/index-node.ts"],
   outDir: "dist",
   hash: false,
-  exports: true,
+  exports: false,
   // useful for running `build --watch` and `test` concurrently
   clean: !process.argv.includes("--watch"),
   deps: {
