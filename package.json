@@ -26,6 +26,7 @@
     ".": {
       "types": "./dist/index-node.d.mts",
       "workerd": "./dist/index-node.mjs",
+      "edge-light": "./dist/index-node.mjs",
       "browser": "./dist/index-browser.mjs",
       "default": "./dist/index-node.mjs"
     },
