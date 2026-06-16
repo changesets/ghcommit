@@ -3,7 +3,6 @@ import type {
   FileChanges,
 } from "./github/graphql/generated/types.ts";
 import type { GitHubClient } from "./github/graphql/queries.ts";
-import type { Logger } from "./logging.ts";
 
 export type CommitFilesResult = {
   refId: string | null;
@@ -34,7 +33,6 @@ export interface CommitFilesBasedArgs {
    * The commit message
    */
   message: string | CommitMessage;
-  log?: Logger;
 }
 
 export interface CommitFilesSharedArgsWithBase extends CommitFilesBasedArgs {

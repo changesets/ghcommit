@@ -84,20 +84,17 @@ export const commitFilesFromBase64 = async ({
   force = false,
   message,
   fileChanges,
-  log,
 }: CommitFilesFromBase64Args): Promise<CommitFilesResult> => {
   const repositoryNameWithOwner = `${owner}/${repo}`;
   const baseRef = getBaseRef(base);
   const targetRef = `refs/heads/${branch}`;
 
-  log?.debug(`Getting repo info ${repositoryNameWithOwner}`);
   const info = await getRepositoryMetadata(octokit, {
     owner,
     repo,
     baseRef,
     targetRef,
   });
-  log?.debug(`Repo info: ${JSON.stringify(info, null, 2)}`);
 
   if (!info) {
     throw new Error(
@@ -181,7 +178,6 @@ export const commitFilesFromBase64 = async ({
       tempRefId = refIdStr;
     }
 
-    log?.debug(`Creating commit on branch ${tempBranch}`);
     const tempCommit = await createCommit({
       octokit,
       refId: tempRefId,
@@ -244,7 +240,6 @@ export const commitFilesFromBase64 = async ({
     refId = sameBranchBase ? resolvedBaseRef!.id : info.targetBranch!.id;
   }
 
-  log?.debug(`Creating commit on branch ${branch}`);
   const newCommit = await createCommit({
     octokit,
     refId,

@@ -73,7 +73,6 @@ All the functions below accept a single object as its argument, and share the fo
    * The commit message
    */
   message: string | CommitMessage;
-  log?: Logger;
 }
 ```
 
