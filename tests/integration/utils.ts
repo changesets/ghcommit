@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import { getOctokit } from "@actions/github";
-import { pino } from "pino";
 import { expect } from "vitest";
 import {
   deleteRefMutation,
@@ -12,13 +11,6 @@ export const githubToken = process.env.GITHUB_TOKEN!;
 export const [owner, repo] = process.env.GITHUB_REPOSITORY!.split("/")!;
 
 export const octokit = getOctokit(githubToken);
-
-export const log = pino({
-  level: process.env.RUNNER_DEBUG === "1" ? "debug" : "info",
-  transport: {
-    target: "pino-pretty",
-  },
-});
 
 /**
  * GitHub sometimes has a delay between making changes to a git repo,
