@@ -46,37 +46,6 @@ export interface CommitFilesFromBase64Args extends CommitFilesSharedArgsWithBase
   fileChanges: FileChanges;
 }
 
-export interface CommitFilesFromBuffersArgs extends CommitFilesSharedArgsWithBase {
-  /**
-   * The file changes, relative to the repository root, to make to the specified branch.
-   */
-  fileChanges: {
-    additions?: Array<{
-      path: string;
-      contents: Buffer;
-    }>;
-    deletions?: string[];
-  };
-}
-
-export interface CommitFilesFromDirectoryArgs extends CommitFilesSharedArgsWithBase {
-  /**
-   * The directory to consider the root of the repository when calculating
-   * file paths
-   */
-  cwd: string;
-  /**
-   * The file paths, relative to {@link cwd},
-   * to add or delete from the branch on GitHub.
-   */
-  fileChanges: {
-    /** File paths, relative to {@link cwd}, to remove from the repo. */
-    additions?: string[];
-    /** File paths, relative to the repository root, to remove from the repo. */
-    deletions?: string[];
-  };
-}
-
 export interface CommitChangesFromRepoArgs extends CommitFilesBasedArgs {
   /**
    * The directory used to find the repository root,

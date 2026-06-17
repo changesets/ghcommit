@@ -40,17 +40,13 @@ pnpm install @changesets/ghcommit
 
 ### Usage in github actions
 
-All functions in this library that interact with the GitHub API require an octokit client that can execute GraphQL. If you are writing code that is designed to be run from within a GitHub Action, this can be done using the `@actions.github` library:
+All functions in this library that interact with the GitHub API require an octokit client that can execute GraphQL. If you are writing code that is designed to be run from within a GitHub Action, this can be done using the `@actions/github` library:
 
 ```ts
 import { getOctokit } from "@actions/github";
 
 const octokit = getOctokit(process.env.GITHUB_TOKEN);
 ```
-
-### Importing specific modules
-
-To allow for you to produce smaller bundle sizes, the functionality exposed in this package is grouped into specific modules that only import the packages required for their use. We recommend that you import from the specific modules rather than the root of the package.
 
 ## API
 
@@ -76,7 +72,65 @@ All the functions below accept a single object as its argument, and share the fo
 }
 ```
 
+### `commitFilesFromBase64`
+
+> Works in Node.js and browsers
+
+This function will add or delete specific files from a repository's branch based on the given `fileChanges` argument.
+
+In addition to `CommitFilesBasedArgs`, this function has the following arguments:
+
+```ts
+{
+  /**
+   * The current branch, tag or commit that the new branch should be based on.
+   */
+  base: GitBase;
+  /**
+   * The file paths, relative to git root, to add or delete from the branch on GitHub.
+   */
+  fileChanges: {
+    /**
+     * File paths, relative to git root, to add to the repo. Content is a base64-encoded string.
+     */
+    additions?: { path: string; content: string }[];
+    /**
+     * File paths, relative to git root, to remove from the repo.
+     */
+    deletions?: { path: string }[];
+  };
+}
+```
+
+Example:
+
+```ts
+import fs from "node:fs/promises";
+import { context, getOctokit } from "@actions/github";
+import { commitFilesFromBase64 } from "@changesets/ghcommit";
+
+const octokit = getOctokit(process.env.GITHUB_TOKEN);
+
+// Commit the changes to README.md based on the main branch
+await commitFilesFromBase64({
+  octokit,
+  ...context.repo,
+  branch: "new-branch-to-create",
+  message: "[chore] do something",
+  base: {
+    branch: "main",
+  },
+  fileChanges: {
+    additions: [
+      { path: "README.md", content: await fs.readFile("README.md", "base64") },
+    ],
+  },
+});
+```
+
 ### `commitChangesFromRepo`
+
+> Works in Node.js only
 
 This function will take an existing repository on your filesystem (defaulting to the current working directory). This function is good to use if you're usually working within the context of a git repository, such as after running `@actions/checkout` in github actions.
 
@@ -121,7 +175,7 @@ Example:
 
 ```ts
 import { context, getOctokit } from "@actions/github";
-import { commitChangesFromRepo } from "@changesets/ghcommit/git";
+import { commitChangesFromRepo } from "@changesets/ghcommit";
 
 const octokit = getOctokit(process.env.GITHUB_TOKEN);
 
@@ -161,130 +215,6 @@ await commitChangesFromRepo({
     // This will be the original sha from the workflow run,
     // even if we've made commits locally
     commit: context.sha,
-  },
-});
-```
-
-### `commitFilesFromDirectory`
-
-This function will add or delete specific files from a repository's branch based on files found on the local filesystem. This is good to use when there are specific files that need to be updated on a branch, or if many changes may have been made locally, but only some files need to be pushed.
-
-In addition to `CommitFilesBasedArgs`, this function has the following arguments:
-
-```ts
-{
-  /**
-   * The current branch, tag or commit that the new branch should be based on.
-   */
-  base: GitBase;
-  /**
-   * The directory to consider the root of the repository when calculating
-   * file paths
-   */
-  cwd: string;
-  /**
-   * The file paths, relative to {@link workingDirectory},
-   * to add or delete from the branch on GitHub.
-   */
-  fileChanges: {
-    /** File paths, relative to {@link workingDirectory}, to remove from the repo. */
-    additions?: string[];
-    /** File paths, relative to the repository root, to remove from the repo. */
-    deletions?: string[];
-  };
-}
-```
-
-Example:
-
-```ts
-import { context, getOctokit } from "@actions/github";
-import { commitFilesFromDirectory } from "@changesets/ghcommit/fs";
-
-const octokit = getOctokit(process.env.GITHUB_TOKEN);
-
-// Commit the changes to package.json and package-lock.json
-// based on the main branch
-await commitFilesFromDirectory({
-  octokit,
-  ...context.repo,
-  branch: "new-branch-to-create",
-  message: "[chore] do something",
-  base: {
-    branch: "main",
-  },
-  cwd: "foo/bar",
-  fileChanges: {
-    additions: ["package-lock.json", "package.json"],
-  },
-});
-
-// Push just the index.html file to a new branch called docs, based off the tag v1.0.0
-await commitFilesFromDirectory({
-  octokit,
-  ...context.repo,
-  branch: "docs",
-  message: "[chore] do something",
-  force: true, // Overwrite any existing branch
-  base: {
-    tag: "v1.0.0",
-  },
-  cwd: "some-dir",
-  fileChanges: {
-    additions: ["index.html"],
-  },
-});
-```
-
-### `commitFilesFromBuffers`
-
-This function will add or delete specific files from a repository's branch based on Node.js `Buffers` that can be any binary data in memory. This is useful for when you want to make changes to a repository / branch without cloning a repo or interacting with a filesystem.
-
-In addition to `CommitFilesBasedArgs`, this function has the following arguments:
-
-```ts
-{
-  /**
-   * The current branch, tag or commit that the new branch should be based on.
-   */
-  base: GitBase;
-  /**
-   * The file changes, relative to the repository root, to make to the specified branch.
-   */
-  fileChanges: {
-    additions?: Array<{
-      path: string;
-      contents: Buffer;
-    }>;
-    deletions?: string[];
-  };
-}
-```
-
-Example:
-
-```ts
-import { context, getOctokit } from "@actions/github";
-import { commitFilesFromBuffers } from "@changesets/ghcommit/node";
-
-const octokit = getOctokit(process.env.GITHUB_TOKEN);
-
-// Add a file called hello-world
-await commitFilesFromBuffers({
-  octokit,
-  ...context.repo,
-  branch: "new-branch-to-create",
-  message: "[chore] do something",
-  base: {
-    branch: "main",
-  },
-  fileChanges: {
-    additions: [
-      {
-        path: "hello/world.txt",
-        contents: Buffer.alloc(1024, "Hello, world!"),
-      },
-    ],
   },
 });
 ```

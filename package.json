@@ -23,11 +23,11 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./dist/index.mjs",
-    "./core": "./dist/core.mjs",
-    "./fs": "./dist/fs.mjs",
-    "./git": "./dist/git.mjs",
-    "./node": "./dist/node.mjs",
+    ".": {
+      "types": "./dist/index-node.d.mts",
+      "browser": "./dist/index-browser.mjs",
+      "default": "./dist/index-node.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
