@@ -1,5 +1,27 @@
 # @changesets/ghcommit
 
+## 3.0.0-next.0
+
+### Major Changes
+
+- [#91](https://github.com/changesets/ghcommit/pull/91) [`9ac746d`](https://github.com/changesets/ghcommit/commit/9ac746d10c551f0e167aa88e87346378860a8270) Thanks [@bluwy](https://github.com/bluwy)! - Remove `queries` export from index. You should not rely on these queries as stable APIs.
+
+- [#89](https://github.com/changesets/ghcommit/pull/89) [`e34689e`](https://github.com/changesets/ghcommit/commit/e34689e5f5a9334fcae2c714655fc4a0d1ccf154) Thanks [@bluwy](https://github.com/bluwy)! - Add `"engines"` field for explicit node version support. The supported node versions are `^22.11 || ^24 || >=26`.
+
+- [#109](https://github.com/changesets/ghcommit/pull/109) [`203f0b7`](https://github.com/changesets/ghcommit/commit/203f0b795d58f74532abe328dda815489cb215ba) Thanks [@bluwy](https://github.com/bluwy)! - Removed the `commitFilesFromBuffers` and `commitFilesFromDirectory` APIs. These APIs were simple wrappers over the core `commitChangesFromBase64` API, which should be used instead. Read the file and pass the base64-encoded content to `commitChangesFromBase64` `fileChanges` directly. For example:
+  - `Buffer.from("hello world").toString("base64")`
+  - `await fs.readFile("path/to/file", "base64")`
+
+- [#88](https://github.com/changesets/ghcommit/pull/88) [`19ea73a`](https://github.com/changesets/ghcommit/commit/19ea73a1643cba9fd8de3583c895f1d95725cd01) Thanks [@bluwy](https://github.com/bluwy)! - Publish code as ESM only
+
+- [#109](https://github.com/changesets/ghcommit/pull/109) [`203f0b7`](https://github.com/changesets/ghcommit/commit/203f0b795d58f74532abe328dda815489cb215ba) Thanks [@bluwy](https://github.com/bluwy)! - Removed all subpath exports. All APIs should be imported from root, e.g. `import { commitChangesFromRepo } from "@changesets/ghcommit"`.
+
+- [#110](https://github.com/changesets/ghcommit/pull/110) [`ead1e55`](https://github.com/changesets/ghcommit/commit/ead1e55ab4256f5bd73f41f751e5d23166b57b12) Thanks [@bluwy](https://github.com/bluwy)! - Remove `log` argument from APIs. If you need to debug the package, use breakpoints or manually add logs in the package code.
+
+### Minor Changes
+
+- [#108](https://github.com/changesets/ghcommit/pull/108) [`8b5585d`](https://github.com/changesets/ghcommit/commit/8b5585d61175b3adec43335cfae7e3160cb9e525) Thanks [@bluwy](https://github.com/bluwy)! - Replace `isomorphic-git` with direct `git` command calls to get the file changes since a given ref
+
 ## 2.1.1
 
 ### Patch Changes
