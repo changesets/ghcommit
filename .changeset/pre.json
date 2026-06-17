@@ -4,5 +4,13 @@
   "initialVersions": {
     "@changesets/ghcommit": "2.1.1"
   },
-  "changesets": []
+  "changesets": [
+    "afraid-forks-develop",
+    "chatty-kiwis-fold",
+    "humble-weeks-watch",
+    "lazy-jokes-camp",
+    "six-eyes-return",
+    "slick-bottles-try",
+    "tidy-chefs-bake"
+  ]
 }
