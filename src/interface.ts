@@ -8,7 +8,7 @@ export type CommitFilesResult = {
   refId: string | null;
 };
 
-export type GitBase =
+export type GitRef =
   | {
       branch: string;
     }
@@ -39,7 +39,7 @@ export interface CommitFilesSharedArgsWithBase extends CommitFilesBasedArgs {
   /**
    * The current branch, tag or commit that the new branch should be based on.
    */
-  base: GitBase;
+  base: GitRef;
 }
 
 export interface CommitFilesFromBase64Args extends CommitFilesSharedArgsWithBase {
@@ -69,9 +69,7 @@ export interface CommitChangesFromRepoArgs extends CommitFilesBasedArgs {
    *
    * @default HEAD
    */
-  base?: {
-    commit: string;
-  };
+  base?: GitRef;
   /**
    * Don't require {@link cwd} to be the root of the repository,
    * and use it as a starting point to recursively search for the `.git`

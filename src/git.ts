@@ -7,21 +7,21 @@ import type {
   CommitFilesFromBase64Args,
   CommitFilesResult,
 } from "./interface.ts";
+import { resolveGitRef } from "./utils.ts";
 
 export const commitChangesFromRepo = async ({
-  base,
   cwd: workingDirectory,
   recursivelyFindRoot = true,
   filterFiles,
   ...otherArgs
 }: CommitChangesFromRepoArgs): Promise<CommitFilesResult> => {
-  const ref = base?.commit ?? "HEAD";
+  const ref = resolveGitRef(otherArgs.base ?? { commit: "HEAD" });
   const cwd = path.resolve(workingDirectory);
   const repoRoot = recursivelyFindRoot ? await findGitRoot(cwd) : cwd;
 
-  const refOid = await getOidForRef(repoRoot, ref);
-  if (!refOid) {
-    throw new Error(`Could not determine oid for ref ${ref}`);
+  const refSha = await getShaForRef(repoRoot, ref);
+  if (!refSha) {
+    throw new Error(`Could not determine sha for ref ${ref}`);
   }
 
   return await commitFilesFromBase64({
@@ -29,11 +29,11 @@ export const commitChangesFromRepo = async ({
     fileChanges: await getFileChanges(
       workingDirectory,
       repoRoot,
-      refOid,
+      refSha,
       filterFiles,
     ),
     base: {
-      commit: refOid,
+      commit: refSha,
     },
   });
 };
@@ -142,7 +142,7 @@ export async function getFileChanges(
   return { additions, deletions };
 }
 
-async function getOidForRef(cwd: string, ref: string): Promise<string | null> {
+async function getShaForRef(cwd: string, ref: string): Promise<string | null> {
   try {
     const { stdout } = await exec("git", ["rev-parse", ref], {
       throwOnError: true,
