@@ -64,6 +64,86 @@ describe("getFileChanges", () => {
     });
   });
 
+  it("should support branch refs", async () => {
+    await using fixture = await createFixture({
+      "a.txt": "Hello, world!",
+    });
+    await setupGit(fixture.path);
+
+    await exec("git", ["checkout", "-b", "new-branch"], {
+      nodeOptions: { cwd: fixture.path },
+    });
+    await fixture.writeFile("b.txt", "This is a new file!");
+
+    const result = await getFileChanges(
+      fixture.path,
+      fixture.path,
+      "refs/heads/new-branch",
+    );
+    expect(result).toEqual({
+      additions: [
+        {
+          path: "b.txt",
+          contents: await fixture.readFile("b.txt", "base64"),
+        },
+      ],
+      deletions: [],
+    });
+  });
+
+  it("should support tag refs", async () => {
+    await using fixture = await createFixture({
+      "a.txt": "Hello, world!",
+    });
+    await setupGit(fixture.path);
+
+    await exec("git", ["tag", "v1.0.0"], {
+      nodeOptions: { cwd: fixture.path },
+    });
+    await fixture.writeFile("b.txt", "This is a new file!");
+
+    const result = await getFileChanges(
+      fixture.path,
+      fixture.path,
+      "refs/tags/v1.0.0",
+    );
+    expect(result).toEqual({
+      additions: [
+        {
+          path: "b.txt",
+          contents: await fixture.readFile("b.txt", "base64"),
+        },
+      ],
+      deletions: [],
+    });
+  });
+
+  it("should support commit refs", async () => {
+    await using fixture = await createFixture({
+      "a.txt": "Hello, world!",
+    });
+    await setupGit(fixture.path);
+
+    const commitSha = (
+      await exec("git", ["rev-parse", "HEAD"], {
+        nodeOptions: { cwd: fixture.path },
+      })
+    ).stdout.trim();
+
+    await fixture.writeFile("b.txt", "This is a new file!");
+
+    const result = await getFileChanges(fixture.path, fixture.path, commitSha);
+    expect(result).toEqual({
+      additions: [
+        {
+          path: "b.txt",
+          contents: await fixture.readFile("b.txt", "base64"),
+        },
+      ],
+      deletions: [],
+    });
+  });
+
   it("should filter files with filterFiles", async () => {
     await using fixture = await createFixture({
       "foo.txt": "Hello, world!",

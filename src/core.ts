@@ -6,41 +6,20 @@ import {
 import type {
   CommitFilesFromBase64Args,
   CommitFilesResult,
-  GitBase,
 } from "./interface.ts";
-import { normalizeCommitMessage } from "./utils.ts";
+import { normalizeCommitMessage, resolveGitRef } from "./utils.ts";
 
-const getBaseRef = (base: GitBase): string => {
-  if ("branch" in base) {
-    return `refs/heads/${base.branch}`;
-  } else if ("tag" in base) {
-    return `refs/tags/${base.tag}`;
-  } else {
-    // For explicit commit bases we don't resolve the base oid from a ref,
-    // but the shared metadata query still expects a valid qualified ref name.
-    return "HEAD";
-  }
-};
+function getBaseRefSha(
+  baseRef: NonNullable<GetRepositoryMetadataQuery["repository"]>["baseRef"],
+) {
+  if (!baseRef?.target) return null;
 
-const getOidFromRef = (
-  base: GitBase,
-  ref: (GetRepositoryMetadataQuery["repository"] &
-    Record<never, never>)["baseRef"],
-) => {
-  if ("commit" in base) {
-    return base.commit;
+  if ("target" in baseRef.target) {
+    return baseRef.target.target.oid;
   }
 
-  if (!ref?.target) {
-    throw new Error(`Could not determine oid from ref: ${JSON.stringify(ref)}`);
-  }
-
-  if ("target" in ref.target) {
-    return ref.target.target.oid;
-  }
-
-  return ref.target.oid;
-};
+  return baseRef.target.oid;
+}
 
 const isAlreadyExistingRefError = (error: unknown) =>
   typeof error === "object" &&
@@ -55,12 +34,12 @@ const isAlreadyExistingRefError = (error: unknown) =>
 const createCommit = async ({
   octokit,
   refId,
-  baseOid,
+  baseSha,
   message,
   fileChanges,
 }: Pick<CommitFilesFromBase64Args, "octokit" | "message" | "fileChanges"> & {
   refId: string;
-  baseOid: string;
+  baseSha: string;
 }) => {
   // we have to stick to GraphQL here as with REST, each file change would become a separate API call
   return createCommitOnBranchQuery(octokit, {
@@ -68,7 +47,7 @@ const createCommit = async ({
       branch: {
         id: refId,
       },
-      expectedHeadOid: baseOid,
+      expectedHeadOid: baseSha,
       message: normalizeCommitMessage(message),
       fileChanges,
     },
@@ -85,8 +64,7 @@ export const commitFilesFromBase64 = async ({
   message,
   fileChanges,
 }: CommitFilesFromBase64Args): Promise<CommitFilesResult> => {
-  const repositoryNameWithOwner = `${owner}/${repo}`;
-  const baseRef = getBaseRef(base);
+  const baseRef = resolveGitRef(base);
   const targetRef = `refs/heads/${branch}`;
 
   const info = await getRepositoryMetadata(octokit, {
@@ -97,40 +75,36 @@ export const commitFilesFromBase64 = async ({
   });
 
   if (!info) {
-    throw new Error(
-      `Repository ${JSON.stringify(repositoryNameWithOwner)} not found`,
-    );
+    throw new Error(`Repository "${owner}/${repo}" not found`);
   }
-  if (!("commit" in base) && !info.baseRef) {
-    throw new Error(`Ref ${JSON.stringify(baseRef)} not found`);
-  }
-
-  const resolvedBaseRef = info.baseRef;
 
   /**
-   * The commit oid to base the new commit on.
+   * The commit sha to base the new commit on.
    *
    * Used both to create the new commit,
    * and to determine whether an existing branch can be updated.
    */
-  const baseOid = getOidFromRef(base, info.baseRef);
-  const targetOid = info.targetBranch?.target?.oid ?? null;
+  const baseSha = "commit" in base ? base.commit : getBaseRefSha(info.baseRef);
+  if (!baseSha) {
+    throw new Error(`Could not determine sha for base ref "${baseRef}"`);
+  }
+  const targetSha = info.targetBranch?.target?.oid ?? null;
   const sameBranchBase = "branch" in base && base.branch === branch;
 
   let mode: "create" | "update" | "force-update";
 
   if (sameBranchBase) {
     mode = force ? "force-update" : "update";
-  } else if (targetOid === null) {
+  } else if (targetSha === null) {
     // TODO: legit *creation* failure should be retried if `force === true`
     mode = "create";
   } else if (force) {
     mode = "force-update";
-  } else if (targetOid === baseOid) {
+  } else if (targetSha === baseSha) {
     mode = "update";
   } else {
     throw new Error(
-      `Branch ${branch} exists already and does not match base ${baseOid}, force is set to false`,
+      `Branch ${branch} exists already and does not match base ${baseSha}, force is set to false`,
     );
   }
 
@@ -146,7 +120,7 @@ export const commitFilesFromBase64 = async ({
         owner,
         repo,
         ref: `refs/heads/${tempBranch}`,
-        sha: baseOid,
+        sha: baseSha,
       });
 
       const refIdStr = createdTempRef.data.node_id;
@@ -165,7 +139,7 @@ export const commitFilesFromBase64 = async ({
         owner,
         repo,
         ref: `heads/${tempBranch}`,
-        sha: baseOid,
+        sha: baseSha,
         force: true,
       });
 
@@ -181,14 +155,14 @@ export const commitFilesFromBase64 = async ({
     const tempCommit = await createCommit({
       octokit,
       refId: tempRefId,
-      baseOid,
+      baseSha,
       message,
       fileChanges,
     });
 
-    const tempHeadOid = tempCommit.createCommitOnBranch?.commit?.oid;
+    const tempHeadSha = tempCommit.createCommitOnBranch?.commit?.oid;
 
-    if (!tempHeadOid) {
+    if (!tempHeadSha) {
       throw new Error(
         `Failed to determine head commit of temporary branch ${tempBranch}`,
       );
@@ -198,7 +172,7 @@ export const commitFilesFromBase64 = async ({
       owner,
       repo,
       ref: `heads/${branch}`,
-      sha: tempHeadOid,
+      sha: tempHeadSha,
       force: true,
     });
 
@@ -226,7 +200,7 @@ export const commitFilesFromBase64 = async ({
       owner,
       repo,
       ref: `refs/heads/${branch}`,
-      sha: baseOid,
+      sha: baseSha,
     });
 
     const refIdStr = createdRef.data.node_id;
@@ -237,13 +211,13 @@ export const commitFilesFromBase64 = async ({
 
     refId = refIdStr;
   } else {
-    refId = sameBranchBase ? resolvedBaseRef!.id : info.targetBranch!.id;
+    refId = sameBranchBase ? info.baseRef!.id : info.targetBranch!.id;
   }
 
   const newCommit = await createCommit({
     octokit,
     refId,
-    baseOid,
+    baseSha,
     message,
     fileChanges,
   });
