@@ -21,17 +21,20 @@ function getBaseRefSha(
   return baseRef.target.oid;
 }
 
-const isAlreadyExistingRefError = (error: unknown) =>
-  typeof error === "object" &&
-  error !== null &&
-  "status" in error &&
-  "message" in error &&
-  typeof error.status === "number" &&
-  typeof error.message === "string" &&
-  error.status === 422 &&
-  error.message.includes("Reference already exists");
+function isAlreadyExistingRefError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    "message" in error &&
+    typeof error.status === "number" &&
+    typeof error.message === "string" &&
+    error.status === 422 &&
+    error.message.includes("Reference already exists")
+  );
+}
 
-const createCommit = async ({
+async function createCommit({
   octokit,
   refId,
   baseSha,
@@ -40,7 +43,7 @@ const createCommit = async ({
 }: Pick<CommitFilesFromBase64Args, "octokit" | "message" | "fileChanges"> & {
   refId: string;
   baseSha: string;
-}) => {
+}) {
   // we have to stick to GraphQL here as with REST, each file change would become a separate API call
   return createCommitOnBranchQuery(octokit, {
     input: {
@@ -52,9 +55,9 @@ const createCommit = async ({
       fileChanges,
     },
   });
-};
+}
 
-export const commitFilesFromBase64 = async ({
+export async function commitFilesFromBase64({
   octokit,
   owner,
   repo,
@@ -63,7 +66,7 @@ export const commitFilesFromBase64 = async ({
   force = false,
   message,
   fileChanges,
-}: CommitFilesFromBase64Args): Promise<CommitFilesResult> => {
+}: CommitFilesFromBase64Args): Promise<CommitFilesResult> {
   const baseRef = resolveGitRef(base);
   const targetRef = `refs/heads/${branch}`;
 
@@ -225,4 +228,4 @@ export const commitFilesFromBase64 = async ({
   return {
     refId: newCommit.createCommitOnBranch?.ref?.id ?? null,
   };
-};
+}
