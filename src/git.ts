@@ -9,12 +9,12 @@ import type {
 } from "./interface.ts";
 import { resolveGitRef } from "./utils.ts";
 
-export const commitChangesFromRepo = async ({
+export async function commitChangesFromRepo({
   cwd: workingDirectory,
   recursivelyFindRoot = true,
   filterFiles,
   ...otherArgs
-}: CommitChangesFromRepoArgs): Promise<CommitFilesResult> => {
+}: CommitChangesFromRepoArgs): Promise<CommitFilesResult> {
   const ref = resolveGitRef(otherArgs.base ?? { commit: "HEAD" });
   const cwd = path.resolve(workingDirectory);
   const repoRoot = recursivelyFindRoot ? await findGitRoot(cwd) : cwd;
@@ -36,7 +36,7 @@ export const commitChangesFromRepo = async ({
       commit: refSha,
     },
   });
-};
+}
 
 // Exported for testing only
 export async function getFileChanges(
