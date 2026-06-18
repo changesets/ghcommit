@@ -35,7 +35,7 @@ export function getTempBranch(name: string) {
 /**
  * Calculate the SHA using git blob hash format
  */
-export function getOid(contents: Buffer): string {
+export function getSha(contents: Buffer): string {
   const header = Buffer.from(`blob ${contents.length}\0`);
   return crypto
     .createHash("sha1")
@@ -48,10 +48,10 @@ export function getOid(contents: Buffer): string {
 
 export async function expectBranchHasTree({
   branch,
-  treeOid,
+  treeSha,
 }: {
   branch: string;
-  treeOid: string;
+  treeSha: string;
 }) {
   const ref = (
     await getRefTreeQuery(octokit, {
@@ -66,17 +66,17 @@ export async function expectBranchHasTree({
     throw new Error("Unexpected missing ref");
   }
 
-  expect(ref.tree.oid).toEqual(treeOid);
+  expect(ref.tree.oid).toEqual(treeSha);
 }
 
 export async function expectBranchHasFile({
   branch,
   filePath,
-  fileOid,
+  fileSha,
 }: {
   branch: string;
   filePath: string;
-  fileOid: string;
+  fileSha: string;
 }) {
   const ref = (
     await getRefTreeQuery(octokit, {
@@ -91,7 +91,7 @@ export async function expectBranchHasFile({
     throw new Error("Unexpected missing ref");
   }
 
-  expect(ref.file?.oid).toEqual(fileOid);
+  expect(ref.file?.oid).toEqual(fileSha);
 }
 
 export async function expectBranchNotHaveFile({
@@ -111,12 +111,12 @@ export async function expectBranchNotHaveFile({
   ).rejects.toThrow("Could not resolve file for path");
 }
 
-export async function expectParentHasOid({
+export async function expectParentHasSha({
   branch,
-  oid,
+  sha,
 }: {
   branch: string;
-  oid: string;
+  sha: string;
 }) {
   const ref = (
     await getRefTreeQuery(octokit, {
@@ -131,7 +131,7 @@ export async function expectParentHasOid({
     throw new Error("Unexpected result");
   }
 
-  expect(ref.parents.nodes?.[0]?.oid).toEqual(oid);
+  expect(ref.parents.nodes?.[0]?.oid).toEqual(sha);
 }
 
 export async function expectBranchDoesNotExist(branch: string) {
