@@ -12,8 +12,8 @@ import {
   expectBranchHasFile,
   expectBranchHasTree,
   expectBranchNotHaveFile,
-  expectParentHasOid,
-  getOid,
+  expectParentHasSha,
+  getSha,
   getTempBranch,
   octokit,
   owner,
@@ -26,7 +26,7 @@ import {
 
 const BASIC_FILE_CHANGES_PATH = "foo.txt";
 const BASIC_FILE_BUFFER = Buffer.alloc(1024, "Hello, world!");
-const BASIC_FILE_CHANGES_OID = getOid(BASIC_FILE_BUFFER);
+const BASIC_FILE_CHANGES_SHA = getSha(BASIC_FILE_BUFFER);
 const BASIC_FILE_CONTENTS = BASIC_FILE_BUFFER.toString("base64");
 const BASIC_FILE_CHANGES = {
   additions: [
@@ -95,13 +95,13 @@ describe("commitFilesFromBase64", () => {
       .trim()
       .split("\n")
       .map((line) => {
-        const [oid, tree] = line.split(" ");
-        return { oid, tree };
+        const [commitSha, treeSha] = line.split(" ");
+        return { commitSha, treeSha };
       });
 
-    testTargetCommit = logs[1]?.oid ?? "N/A";
-    testTargetCommit2 = logs[0]?.oid ?? "N/A";
-    testTargetTree2 = logs[0]?.tree ?? "N/A";
+    testTargetCommit = logs[1]?.commitSha ?? "N/A";
+    testTargetCommit2 = logs[0]?.commitSha ?? "N/A";
+    testTargetTree2 = logs[0]?.treeSha ?? "N/A";
   });
 
   it("can commit files", async () => {
@@ -140,17 +140,17 @@ describe("commitFilesFromBase64", () => {
     await expectBranchHasFile({
       branch,
       filePath: "new-file.txt",
-      fileOid: getOid(buffers.newFile),
+      fileSha: getSha(buffers.newFile),
     });
     await expectBranchHasFile({
       branch,
       filePath: "README.md",
-      fileOid: getOid(buffers.updated),
+      fileSha: getSha(buffers.updated),
     });
     await expectBranchHasFile({
       branch,
       filePath: "tests/file.txt",
-      fileOid: getOid(buffers.nested),
+      fileSha: getSha(buffers.nested),
     });
     await expectBranchNotHaveFile({ branch, filePath: "CHANGELOG.md" });
   });
@@ -181,7 +181,7 @@ describe("commitFilesFromBase64", () => {
       await expectBranchHasFile({
         branch,
         filePath: `${sizeName}.txt`,
-        fileOid: getOid(buffer),
+        fileSha: getSha(buffer),
       });
     }
   });
@@ -204,7 +204,7 @@ describe("commitFilesFromBase64", () => {
     await expectBranchHasFile({
       branch,
       filePath: BASIC_FILE_CHANGES_PATH,
-      fileOid: BASIC_FILE_CHANGES_OID,
+      fileSha: BASIC_FILE_CHANGES_SHA,
     });
   });
 
@@ -229,7 +229,7 @@ describe("commitFilesFromBase64", () => {
     await expectBranchHasFile({
       branch,
       filePath: BASIC_FILE_CHANGES_PATH,
-      fileOid: BASIC_FILE_CHANGES_OID,
+      fileSha: BASIC_FILE_CHANGES_SHA,
     });
   });
 
@@ -250,7 +250,7 @@ describe("commitFilesFromBase64", () => {
     await expectBranchHasFile({
       branch,
       filePath: BASIC_FILE_CHANGES_PATH,
-      fileOid: BASIC_FILE_CHANGES_OID,
+      fileSha: BASIC_FILE_CHANGES_SHA,
     });
   });
 
@@ -281,10 +281,10 @@ describe("commitFilesFromBase64", () => {
       await expectBranchHasFile({
         branch,
         filePath: BASIC_FILE_CHANGES_PATH,
-        fileOid: BASIC_FILE_CHANGES_OID,
+        fileSha: BASIC_FILE_CHANGES_SHA,
       });
 
-      await expectParentHasOid({ branch, oid: testTargetCommit });
+      await expectParentHasSha({ branch, sha: testTargetCommit });
       await expectBranchDoesNotExist(internalTempBranch);
     });
 
@@ -321,10 +321,10 @@ describe("commitFilesFromBase64", () => {
       await expectBranchHasFile({
         branch,
         filePath: BASIC_FILE_CHANGES_PATH,
-        fileOid: BASIC_FILE_CHANGES_OID,
+        fileSha: BASIC_FILE_CHANGES_SHA,
       });
 
-      await expectParentHasOid({ branch, oid: testTargetCommit });
+      await expectParentHasSha({ branch, sha: testTargetCommit });
       await expectBranchDoesNotExist(internalTempBranch);
     });
 
@@ -354,7 +354,7 @@ describe("commitFilesFromBase64", () => {
 
       await expectBranchHasTree({
         branch,
-        treeOid: testTargetTree2,
+        treeSha: testTargetTree2,
       });
     });
 
@@ -383,7 +383,7 @@ describe("commitFilesFromBase64", () => {
       await expectBranchHasFile({
         branch,
         filePath: BASIC_FILE_CHANGES_PATH,
-        fileOid: BASIC_FILE_CHANGES_OID,
+        fileSha: BASIC_FILE_CHANGES_SHA,
       });
     });
 
@@ -412,7 +412,7 @@ describe("commitFilesFromBase64", () => {
       await expectBranchHasFile({
         branch,
         filePath: BASIC_FILE_CHANGES_PATH,
-        fileOid: BASIC_FILE_CHANGES_OID,
+        fileSha: BASIC_FILE_CHANGES_SHA,
       });
     });
   });
