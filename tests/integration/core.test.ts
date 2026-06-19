@@ -261,7 +261,6 @@ describe("commitFilesFromBase64", () => {
       onTestFinished(() => deleteBranch(branch));
       onTestFinished(() => deleteBranch(internalTempBranch, true));
 
-      // Create an exiting branch
       await createRefMutation(octokit, {
         input: {
           repositoryId,
@@ -332,7 +331,6 @@ describe("commitFilesFromBase64", () => {
       const branch = getTempBranch("existing-branch-no-force");
       onTestFinished(() => deleteBranch(branch));
 
-      // Create an exiting branch
       await createRefMutation(octokit, {
         input: {
           repositoryId,
@@ -349,7 +347,7 @@ describe("commitFilesFromBase64", () => {
           fileChanges: BASIC_FILE_CHANGES,
         }),
       ).rejects.toThrow(
-        `Branch ${branch} exists already and does not match base`,
+        `Branch "${branch}" exists but its HEAD does not match the base ${testTargetCommit} and \`force\` is set to false`,
       );
 
       await expectBranchHasTree({
@@ -362,36 +360,6 @@ describe("commitFilesFromBase64", () => {
       const branch = getTempBranch("existing-branch-matching-base");
       onTestFinished(() => deleteBranch(branch));
 
-      // Create an exiting branch
-      await createRefMutation(octokit, {
-        input: {
-          repositoryId,
-          name: `refs/heads/${branch}`,
-          oid: testTargetCommit,
-        },
-      });
-
-      await waitForGitHubToBeReady();
-
-      await commitFilesFromBase64WithDefaults({
-        branch,
-        fileChanges: BASIC_FILE_CHANGES,
-      });
-
-      await waitForGitHubToBeReady();
-
-      await expectBranchHasFile({
-        branch,
-        filePath: BASIC_FILE_CHANGES_PATH,
-        fileSha: BASIC_FILE_CHANGES_SHA,
-      });
-    });
-
-    it("can commit to same branch as base", async () => {
-      const branch = getTempBranch("same-branch-as-base");
-      onTestFinished(() => deleteBranch(branch));
-
-      // Create an exiting branch
       await createRefMutation(octokit, {
         input: {
           repositoryId,

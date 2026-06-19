@@ -5,7 +5,7 @@ import type {
 import type { GitHubClient } from "./github/graphql/queries.ts";
 
 export type CommitFilesResult = {
-  refId: string | null;
+  refId: string;
 };
 
 export type GitRef =
