@@ -11,6 +11,11 @@ export default defineConfig({
   clean: !process.argv.includes("--watch"),
   deps: {
     onlyBundle: [], // require explicitly listing inlined dependencies
+    neverBundle: [
+      // Referenced in internal types only and should be treeshaken away, but
+      // we need to specify it here to allow for linking before treeshaking
+      "@actions/github",
+    ],
   },
 
   sourcemap: !isCi,
