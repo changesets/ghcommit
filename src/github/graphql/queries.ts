@@ -1,37 +1,17 @@
-// Octokit types are messy. To avoid adding any (peer)dependencies we rely on TS structural typing here
-export type Octokit = {
-  graphql: <T>(
-    query: string,
-    variables?: Record<string, unknown>,
-  ) => Promise<T>;
-  rest: {
-    git: {
-      createRef: (params: {
-        owner: string;
-        repo: string;
-        ref: string;
-        sha: string;
-      }) => Promise<{ data: { node_id?: string } }>;
-      updateRef: (params: {
-        owner: string;
-        repo: string;
-        ref: string;
-        sha: string;
-        force?: boolean;
-      }) => Promise<{ data: { node_id?: string } }>;
-      deleteRef: (params: {
-        owner: string;
-        repo: string;
-        ref: string;
-      }) => Promise<unknown>;
-      getRef?: (params: {
-        owner: string;
-        repo: string;
-        ref: string;
-      }) => Promise<unknown>;
-    };
-  };
-};
+import type { getOctokit } from "@actions/github";
+
+export type Octokit = ReturnType<typeof getOctokit>;
+
+/**
+ * Rough shape of the Octokit instance we need so we don't depend on the full
+ * dependency and types.
+ */
+export interface PartialOctokit {
+  request: unknown;
+  graphql: unknown;
+  rest: unknown;
+  paginate: unknown;
+}
 
 import type {
   CreateCommitOnBranchMutation,

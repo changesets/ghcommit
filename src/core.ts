@@ -2,6 +2,7 @@ import type { GetRepositoryMetadataQuery } from "./github/graphql/generated/oper
 import {
   createCommitOnBranchQuery,
   getRepositoryMetadata,
+  type Octokit,
 } from "./github/graphql/queries.ts";
 import type { CommitChangesOptions, CommitChangesResult } from "./types.ts";
 import { normalizeCommitMessage, resolveGitRef } from "./utils.ts";
@@ -17,7 +18,7 @@ type CreateCommit = (
  * Works in Node.js and browsers.
  */
 export async function commitChanges({
-  octokit,
+  octokit: partialOctokit,
   owner,
   repo,
   branch,
@@ -26,6 +27,7 @@ export async function commitChanges({
   message,
   fileChanges,
 }: CommitChangesOptions): Promise<CommitChangesResult> {
+  const octokit = partialOctokit as Octokit;
   const baseRef = resolveGitRef(base);
 
   const info = await getRepositoryMetadata(octokit, {
@@ -168,7 +170,10 @@ async function createOrForceUpdateTemporaryBranch({
   repo,
   tempBranch,
   baseSha,
-}: Pick<CommitChangesOptions, "octokit" | "owner" | "repo"> & {
+}: {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
   tempBranch: string;
   baseSha: string;
 }) {

@@ -2,7 +2,7 @@ import type {
   CommitMessage,
   FileChanges,
 } from "./github/graphql/generated/types.ts";
-import type { Octokit } from "./github/graphql/queries.ts";
+import type { PartialOctokit } from "./github/graphql/queries.ts";
 
 export type GitRef = { branch: string } | { tag: string } | { commit: string };
 
@@ -12,7 +12,7 @@ export interface CommitChangesOptions {
    * from `@octokit/core`, `@octokit/plugin-rest-endpoint-methods`, and
    * `@octokit/plugin-paginate-rest`.
    */
-  octokit: Octokit;
+  octokit: PartialOctokit;
   /**
    * The owner of the repository.
    */
