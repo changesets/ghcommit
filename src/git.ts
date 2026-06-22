@@ -143,7 +143,7 @@ async function findGitRoot(cwd: string): Promise<string> {
       throwOnError: true,
       nodeOptions: { cwd },
     });
-    return path.resolve(cwd, stdout.trim());
+    return path.dirname(path.resolve(cwd, stdout.trim()));
   } catch {
     return cwd;
   }

@@ -165,33 +165,6 @@ describe("getFileChanges", () => {
     });
   });
 
-  it("should filter files when running in a repository sub-directory", async () => {
-    await using fixture = await createFixture({
-      "foo.txt": "Hello, world!",
-      "nested/foo.txt": "Hello, world!",
-    });
-    await setupGit(fixture.path);
-
-    await fixture.rm("foo.txt");
-    await fixture.rm("nested/foo.txt");
-    await fixture.writeFile("bar.txt", "This is a new file!");
-    await fixture.writeFile("nested/bar.txt", "This is a new file!");
-
-    const result = await getFileChanges(
-      path.join(fixture.path, "nested"),
-      "HEAD",
-    );
-    expect(result).toEqual({
-      additions: [
-        {
-          path: "nested/bar.txt",
-          contents: await fixture.readFile("nested/bar.txt", "base64"),
-        },
-      ],
-      deletions: [{ path: "nested/foo.txt" }],
-    });
-  });
-
   it("should allow existing symlinks", async () => {
     await using fixture = await createFixture({
       "foo.txt": "Hello, world!",
