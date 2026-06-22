@@ -93,21 +93,16 @@ export interface CommitChangesSinceBaseOptions extends Omit<
    */
   base?: GitRef;
   /**
-   * The directory to execute git commands in. And any changes outside of this
-   * directory (but within the repository) is ignored.
-   */
-  cwd: string;
-  /**
-   * Don't require {@link cwd} to be the root of the repository,
-   * and use it as a starting point to recursively search for the `.git`
-   * directory in parent directories.
+   * The directory to execute git commands in. This can be set if the repository
+   * is in a different directory.
    *
-   * @default true
+   * @default process.cwd()
    */
-  recursivelyFindRoot?: boolean;
+  cwd?: string;
   /**
-   * An optional function that can be used to filter which files are included
-   * in the commit. True should be returned for files that should be included.
+   * Filter the files to be included in the commit. The file paths are relative
+   * to the repository root, e.g. `"src/index.ts"`. Return `true` to include
+   * the file.
    *
    * By default, all files are included.
    */

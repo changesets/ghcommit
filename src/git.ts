@@ -21,28 +21,21 @@ import { resolveGitRef } from "./utils.ts";
  * Works in Node.js only.
  */
 export async function commitChangesSinceBase({
-  cwd: workingDirectory,
-  recursivelyFindRoot = true,
+  cwd,
   filterFiles,
   ...otherArgs
 }: CommitChangesSinceBaseOptions): Promise<CommitChangesResult> {
-  const ref = resolveGitRef(otherArgs.base ?? { commit: "HEAD" });
-  const cwd = path.resolve(workingDirectory);
-  const repoRoot = recursivelyFindRoot ? await findGitRoot(cwd) : cwd;
+  cwd = path.resolve(cwd ?? process.cwd());
 
-  const refSha = await getShaForRef(repoRoot, ref);
+  const ref = resolveGitRef(otherArgs.base ?? { commit: "HEAD" });
+  const refSha = await getShaForRef(cwd, ref);
   if (!refSha) {
     throw new Error(`Could not determine sha for ref ${ref}`);
   }
 
   return await commitChanges({
     ...otherArgs,
-    fileChanges: await getFileChanges(
-      workingDirectory,
-      repoRoot,
-      refSha,
-      filterFiles,
-    ),
+    fileChanges: await getFileChanges(cwd, refSha, filterFiles),
     base: {
       commit: refSha,
     },
@@ -52,30 +45,17 @@ export async function commitChangesSinceBase({
 // Exported for testing only
 export async function getFileChanges(
   cwd: string,
-  repoRoot: string,
   ref: string,
   filterFiles?: CommitChangesSinceBaseOptions["filterFiles"],
 ): Promise<CommitChangesOptions["fileChanges"]> {
-  /**
-   * The directory to add files from. This is relative to the repository
-   * root, and is used to filter files.
-   */
-  const relativeStartDirectory =
-    cwd === repoRoot ? null : path.relative(repoRoot, cwd) + "/";
+  const repoRoot = await findGitRoot(cwd);
 
   const additions: CommitChangesOptions["fileChanges"]["additions"] = [];
   const deletions: CommitChangesOptions["fileChanges"]["deletions"] = [];
 
   const addPath = async (filePath: string) => {
-    if (
-      relativeStartDirectory &&
-      !filePath.startsWith(relativeStartDirectory)
-    ) {
-      return;
-    }
-    if (filterFiles && !filterFiles(filePath)) {
-      return;
-    }
+    if (filterFiles && !filterFiles(filePath)) return;
+
     const resolvedFilePath = path.join(repoRoot, filePath);
     const stat = await fs.lstat(resolvedFilePath);
     if (stat.isSymbolicLink()) {
@@ -97,15 +77,7 @@ export async function getFileChanges(
   };
 
   const deletePath = (filePath: string) => {
-    if (
-      relativeStartDirectory &&
-      !filePath.startsWith(relativeStartDirectory)
-    ) {
-      return;
-    }
-    if (filterFiles && !filterFiles(filePath)) {
-      return;
-    }
+    if (filterFiles && !filterFiles(filePath)) return;
 
     deletions.push({ path: filePath });
   };
@@ -171,7 +143,7 @@ async function findGitRoot(cwd: string): Promise<string> {
       throwOnError: true,
       nodeOptions: { cwd },
     });
-    return path.resolve(cwd, stdout.trim());
+    return path.dirname(path.resolve(cwd, stdout.trim()));
   } catch {
     return cwd;
   }
