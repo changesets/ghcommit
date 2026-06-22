@@ -1,5 +1,25 @@
 # @changesets/ghcommit
 
+## 3.0.0-next.1
+
+### Major Changes
+
+- [#118](https://github.com/changesets/ghcommit/pull/118) [`e2b975d`](https://github.com/changesets/ghcommit/commit/e2b975dc48003dfa24fd18393149cd8e1d6d2037) Thanks [@bluwy](https://github.com/bluwy)! - Remove `recursivelyFindRoot` and make `cwd` optional for `commitChangesSinceBase`. Files will also not be filtered by `cwd` by default. To only commit files from a directory, use the `filterFiles` option instead.
+
+- [#117](https://github.com/changesets/ghcommit/pull/117) [`165c6cb`](https://github.com/changesets/ghcommit/commit/165c6cbbd2e284a9af4ea5dacb8752798e243b70) Thanks [@bluwy](https://github.com/bluwy)! - Rename public APIs and export types. Note that the existing changelog may still reference the old names, but the new names should be used instead.
+  - `commitFilesFromBase64` -> `commitChanges`
+  - `commitChangesFromRepo` -> `commitChangesSinceBase`
+
+### Minor Changes
+
+- [#116](https://github.com/changesets/ghcommit/pull/116) [`67853bf`](https://github.com/changesets/ghcommit/commit/67853bfb20c860ba1cb4069be443ba4e54c79095) Thanks [@bluwy](https://github.com/bluwy)! - Improve create, update, and force update handling in `commitFilesFromBase64`:
+  - Correctly detect if the `base` is the same as `branch` by comparing their SHAs instead of names.
+  - Perform a normal update if the branch exists and the `base` and branch HEAD SHAs match, instead of always a force update if `force` is true.
+  - Always clean up created or existing temporary branches during force updates, even if it fails.
+  - Always return a non-nullable `refId` from `commitFilesFromBase64` (and consequently `commitChangesFromRepo`). If the commit fails, it'll throw an error instead, similar to existing parts of the implementation.
+
+- [#111](https://github.com/changesets/ghcommit/pull/111) [`1cf711e`](https://github.com/changesets/ghcommit/commit/1cf711eac92dc535787c3af3cc488989826ee43d) Thanks [@bluwy](https://github.com/bluwy)! - Support `branch` and `tag` format for `commitChangesFromRepo` `base` option. This aligns with the `commitFilesFromBase64` `base` option.
+
 ## 3.0.0-next.0
 
 ### Major Changes
