@@ -44,7 +44,7 @@ describe("getFileChanges", () => {
     await fixture.writeFile("ignored/file.txt", "This file should be ignored");
     await fixture.writeFile(".env", "This file should be ignored");
 
-    const result = await getFileChanges(fixture.path, fixture.path, "HEAD");
+    const result = await getFileChanges(fixture.path, "HEAD");
     expect(result).toEqual({
       additions: [
         {
@@ -75,11 +75,7 @@ describe("getFileChanges", () => {
     });
     await fixture.writeFile("b.txt", "This is a new file!");
 
-    const result = await getFileChanges(
-      fixture.path,
-      fixture.path,
-      "refs/heads/new-branch",
-    );
+    const result = await getFileChanges(fixture.path, "refs/heads/new-branch");
     expect(result).toEqual({
       additions: [
         {
@@ -102,11 +98,7 @@ describe("getFileChanges", () => {
     });
     await fixture.writeFile("b.txt", "This is a new file!");
 
-    const result = await getFileChanges(
-      fixture.path,
-      fixture.path,
-      "refs/tags/v1.0.0",
-    );
+    const result = await getFileChanges(fixture.path, "refs/tags/v1.0.0");
     expect(result).toEqual({
       additions: [
         {
@@ -132,7 +124,7 @@ describe("getFileChanges", () => {
 
     await fixture.writeFile("b.txt", "This is a new file!");
 
-    const result = await getFileChanges(fixture.path, fixture.path, commitSha);
+    const result = await getFileChanges(fixture.path, commitSha);
     expect(result).toEqual({
       additions: [
         {
@@ -157,7 +149,6 @@ describe("getFileChanges", () => {
     await fixture.writeFile("nested/bar.txt", "This is a new file!");
 
     const result = await getFileChanges(
-      fixture.path,
       fixture.path,
       "HEAD",
       // Only include top-level files
@@ -188,7 +179,6 @@ describe("getFileChanges", () => {
 
     const result = await getFileChanges(
       path.join(fixture.path, "nested"),
-      fixture.path,
       "HEAD",
     );
     expect(result).toEqual({
@@ -220,7 +210,7 @@ describe("getFileChanges", () => {
     });
 
     // Since we committed, HEAD points to the last commit and there's no change since then
-    const result = await getFileChanges(fixture.path, fixture.path, "HEAD");
+    const result = await getFileChanges(fixture.path, "HEAD");
     expect(result).toEqual({ additions: [], deletions: [] });
 
     await fixture.rm("some-dir/nested");
@@ -230,9 +220,7 @@ describe("getFileChanges", () => {
     );
 
     // We made symlink changes since the last commit, so this should error now
-    await expect(
-      getFileChanges(fixture.path, fixture.path, "HEAD"),
-    ).rejects.toThrow(
+    await expect(getFileChanges(fixture.path, "HEAD")).rejects.toThrow(
       "Unexpected symlink at some-dir/nested, GitHub API only supports files and directories. You may need to add this file to .gitignore",
     );
   });
@@ -255,7 +243,7 @@ describe("getFileChanges", () => {
       fixture.getPath("some-dir/nested"),
     );
 
-    const result = await getFileChanges(fixture.path, fixture.path, "HEAD");
+    const result = await getFileChanges(fixture.path, "HEAD");
     expect(result).toEqual({ additions: [], deletions: [] });
   });
 
@@ -269,9 +257,7 @@ describe("getFileChanges", () => {
       fixture.getPath("some-dir/nested"),
     );
 
-    await expect(
-      getFileChanges(fixture.path, fixture.path, "HEAD"),
-    ).rejects.toThrow(
+    await expect(getFileChanges(fixture.path, "HEAD")).rejects.toThrow(
       "Unexpected symlink at some-dir/nested, GitHub API only supports files and directories. You may need to add this file to .gitignore",
     );
   });
@@ -288,9 +274,7 @@ describe("getFileChanges", () => {
       fixture.getPath("some-dir/nested"),
     );
 
-    await expect(
-      getFileChanges(fixture.path, fixture.path, "HEAD"),
-    ).rejects.toThrow(
+    await expect(getFileChanges(fixture.path, "HEAD")).rejects.toThrow(
       "Unexpected symlink at some-dir/nested, GitHub API only supports files and directories. You may need to add this file to .gitignore",
     );
   });
@@ -302,9 +286,7 @@ describe("getFileChanges", () => {
     await fixture.writeFile("executable-file.sh", "#!/bin/bash\necho hello");
     await fs.chmod(fixture.getPath("executable-file.sh"), 0o755);
 
-    await expect(
-      getFileChanges(fixture.path, fixture.path, "HEAD"),
-    ).rejects.toThrow(
+    await expect(getFileChanges(fixture.path, "HEAD")).rejects.toThrow(
       "Unexpected executable file at executable-file.sh, GitHub API only supports non-executable files and directories. You may need to add this file to .gitignore",
     );
   });
