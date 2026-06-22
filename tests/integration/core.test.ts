@@ -1,11 +1,11 @@
 import { exec } from "tinyexec";
 import { beforeAll, describe, expect, it, onTestFinished } from "vitest";
-import { commitFilesFromBase64 } from "../../src/core.ts";
+import { commitChanges } from "../../src/core.ts";
 import {
   createRefMutation,
   getRepositoryMetadata,
 } from "../../src/github/graphql/queries.ts";
-import type { CommitFilesFromBase64Args } from "../../src/interface.ts";
+import type { CommitChangesOptions } from "../../src/types.ts";
 import {
   deleteBranch,
   expectBranchDoesNotExist,
@@ -42,7 +42,7 @@ function getInternalTempBranch(name: string) {
   return `changesets-ghcommit-temp/${name}`;
 }
 
-describe("commitFilesFromBase64", () => {
+describe("commitChanges", () => {
   let repositoryId: string;
   let testTargetCommit: string;
 
@@ -53,14 +53,14 @@ describe("commitFilesFromBase64", () => {
   let testTargetCommit2: string;
   let testTargetTree2: string;
 
-  async function commitFilesFromBase64WithDefaults(
+  async function commitChangesWithDefaults(
     args: Omit<
-      CommitFilesFromBase64Args,
+      CommitChangesOptions,
       "octokit" | "owner" | "repo" | "message" | "base"
     > &
-      Partial<Pick<CommitFilesFromBase64Args, "base">>,
+      Partial<Pick<CommitChangesOptions, "base">>,
   ) {
-    return await commitFilesFromBase64({
+    return await commitChanges({
       octokit,
       owner,
       repo,
@@ -114,7 +114,7 @@ describe("commitFilesFromBase64", () => {
       nested: Buffer.from("Hello, world!"),
     };
 
-    await commitFilesFromBase64WithDefaults({
+    await commitChangesWithDefaults({
       branch,
       fileChanges: {
         additions: [
@@ -165,7 +165,7 @@ describe("commitFilesFromBase64", () => {
       "10MiB": Buffer.alloc(1024 * 1024 * 10, "Hello, world!"),
     };
 
-    await commitFilesFromBase64WithDefaults({
+    await commitChangesWithDefaults({
       branch,
       fileChanges: {
         additions: Object.entries(buffers).map(([sizeName, buffer]) => ({
@@ -190,7 +190,7 @@ describe("commitFilesFromBase64", () => {
     const branch = getTempBranch("branch-base");
     onTestFinished(() => deleteBranch(branch));
 
-    await commitFilesFromBase64WithDefaults({
+    await commitChangesWithDefaults({
       branch,
       base: {
         branch: "main",
@@ -213,7 +213,7 @@ describe("commitFilesFromBase64", () => {
     const branch = getTempBranch("tag-base");
     onTestFinished(() => deleteBranch(branch));
 
-    await commitFilesFromBase64WithDefaults({
+    await commitChangesWithDefaults({
       branch,
       base: {
         // for some reason the tag used here needs to have `.github/workflows` identical~ to the default branch
@@ -237,7 +237,7 @@ describe("commitFilesFromBase64", () => {
     const branch = getTempBranch("commit-base");
     onTestFinished(() => deleteBranch(branch));
 
-    await commitFilesFromBase64WithDefaults({
+    await commitChangesWithDefaults({
       branch,
       base: {
         commit: testTargetCommit,
@@ -269,7 +269,7 @@ describe("commitFilesFromBase64", () => {
         },
       });
 
-      await commitFilesFromBase64WithDefaults({
+      await commitChangesWithDefaults({
         branch,
         fileChanges: BASIC_FILE_CHANGES,
         force: true,
@@ -309,7 +309,7 @@ describe("commitFilesFromBase64", () => {
         },
       });
 
-      await commitFilesFromBase64WithDefaults({
+      await commitChangesWithDefaults({
         branch,
         fileChanges: BASIC_FILE_CHANGES,
         force: true,
@@ -342,7 +342,7 @@ describe("commitFilesFromBase64", () => {
       await waitForGitHubToBeReady();
 
       await expect(() =>
-        commitFilesFromBase64WithDefaults({
+        commitChangesWithDefaults({
           branch,
           fileChanges: BASIC_FILE_CHANGES,
         }),
@@ -370,7 +370,7 @@ describe("commitFilesFromBase64", () => {
 
       await waitForGitHubToBeReady();
 
-      await commitFilesFromBase64WithDefaults({
+      await commitChangesWithDefaults({
         branch,
         fileChanges: BASIC_FILE_CHANGES,
       });

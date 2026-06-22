@@ -3,10 +3,7 @@ import {
   createCommitOnBranchQuery,
   getRepositoryMetadata,
 } from "./github/graphql/queries.ts";
-import type {
-  CommitFilesFromBase64Args,
-  CommitFilesResult,
-} from "./interface.ts";
+import type { CommitChangesOptions, CommitChangesResult } from "./types.ts";
 import { normalizeCommitMessage, resolveGitRef } from "./utils.ts";
 
 type CreateCommit = (
@@ -14,7 +11,12 @@ type CreateCommit = (
   branch: string,
 ) => Promise<{ commitSha: string }>;
 
-export async function commitFilesFromBase64({
+/**
+ * Commit file changes to a branch using the GitHub API.
+ *
+ * Works in Node.js and browsers.
+ */
+export async function commitChanges({
   octokit,
   owner,
   repo,
@@ -23,7 +25,7 @@ export async function commitFilesFromBase64({
   force = false,
   message,
   fileChanges,
-}: CommitFilesFromBase64Args): Promise<CommitFilesResult> {
+}: CommitChangesOptions): Promise<CommitChangesResult> {
   const baseRef = resolveGitRef(base);
 
   const info = await getRepositoryMetadata(octokit, {
@@ -166,7 +168,7 @@ async function createOrForceUpdateTemporaryBranch({
   repo,
   tempBranch,
   baseSha,
-}: Pick<CommitFilesFromBase64Args, "octokit" | "owner" | "repo"> & {
+}: Pick<CommitChangesOptions, "octokit" | "owner" | "repo"> & {
   tempBranch: string;
   baseSha: string;
 }) {

@@ -1,5 +1,5 @@
 import type { CommitMessage } from "./github/graphql/generated/types.ts";
-import type { GitRef } from "./interface.ts";
+import type { GitRef } from "./types.ts";
 
 export function normalizeCommitMessage(
   message: string | CommitMessage,

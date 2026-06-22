@@ -1,5 +1,5 @@
 // Octokit types are messy. To avoid adding any (peer)dependencies we rely on TS structural typing here
-export type GitHubClient = {
+export type Octokit = {
   graphql: <T>(
     query: string,
     variables?: Record<string, unknown>,
@@ -151,7 +151,7 @@ const GET_REF_TREE = /* GraphQL */ `
 `;
 
 export const getRepositoryMetadata = async (
-  o: GitHubClient,
+  o: Octokit,
   v: GetRepositoryMetadataQueryVariables,
 ): Promise<GetRepositoryMetadataQuery["repository"]> => {
   const result = await o.graphql<GetRepositoryMetadataQuery>(
@@ -162,30 +162,30 @@ export const getRepositoryMetadata = async (
 };
 
 export const createRefMutation = async (
-  o: GitHubClient,
+  o: Octokit,
   v: CreateRefMutationVariables,
 ): Promise<CreateRefMutation> =>
   await o.graphql<CreateRefMutation>(CREATE_REF, v);
 
 export const updateRefMutation = async (
-  o: GitHubClient,
+  o: Octokit,
   v: UpdateRefMutationVariables,
 ): Promise<UpdateRefMutation> =>
   await o.graphql<UpdateRefMutation>(UPDATE_REF, v);
 
 export const deleteRefMutation = async (
-  o: GitHubClient,
+  o: Octokit,
   v: DeleteRefMutationVariables,
 ): Promise<DeleteRefMutation> =>
   await o.graphql<DeleteRefMutation>(DELETE_REF, v);
 
 export const createCommitOnBranchQuery = async (
-  o: GitHubClient,
+  o: Octokit,
   v: CreateCommitOnBranchMutationVariables,
 ): Promise<CreateCommitOnBranchMutation> =>
   o.graphql<CreateCommitOnBranchMutation>(CREATE_COMMIT_ON_BRANCH, v);
 
 export const getRefTreeQuery = async (
-  o: GitHubClient,
+  o: Octokit,
   v: GetRefTreeQueryVariables,
 ): Promise<GetRefTreeQuery> => o.graphql<GetRefTreeQuery>(GET_REF_TREE, v);

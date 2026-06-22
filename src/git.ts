@@ -1,20 +1,31 @@
 import fs from "node:fs/promises";
 import path from "path";
 import { exec } from "tinyexec";
-import { commitFilesFromBase64 } from "./core.ts";
+import { commitChanges } from "./core.ts";
 import type {
-  CommitChangesFromRepoArgs,
-  CommitFilesFromBase64Args,
-  CommitFilesResult,
-} from "./interface.ts";
+  CommitChangesOptions,
+  CommitChangesSinceBaseOptions,
+  CommitChangesResult,
+} from "./types.ts";
 import { resolveGitRef } from "./utils.ts";
 
-export async function commitChangesFromRepo({
+/**
+ * Commit file changes since a local git base (defaults to HEAD). This executes
+ * the `git` command to determine the changes and then uses {@link commitChanges}
+ * to commit them to the given branch.
+ *
+ * The default HEAD base includes all uncommitted changes since the last commit.
+ * If previous commits have been made locally and not pushed, you need to set `base
+ * to the last commit that is known to be in the remote repository.
+ *
+ * Works in Node.js only.
+ */
+export async function commitChangesSinceBase({
   cwd: workingDirectory,
   recursivelyFindRoot = true,
   filterFiles,
   ...otherArgs
-}: CommitChangesFromRepoArgs): Promise<CommitFilesResult> {
+}: CommitChangesSinceBaseOptions): Promise<CommitChangesResult> {
   const ref = resolveGitRef(otherArgs.base ?? { commit: "HEAD" });
   const cwd = path.resolve(workingDirectory);
   const repoRoot = recursivelyFindRoot ? await findGitRoot(cwd) : cwd;
@@ -24,7 +35,7 @@ export async function commitChangesFromRepo({
     throw new Error(`Could not determine sha for ref ${ref}`);
   }
 
-  return await commitFilesFromBase64({
+  return await commitChanges({
     ...otherArgs,
     fileChanges: await getFileChanges(
       workingDirectory,
@@ -43,8 +54,8 @@ export async function getFileChanges(
   cwd: string,
   repoRoot: string,
   ref: string,
-  filterFiles?: CommitChangesFromRepoArgs["filterFiles"],
-): Promise<CommitFilesFromBase64Args["fileChanges"]> {
+  filterFiles?: CommitChangesSinceBaseOptions["filterFiles"],
+): Promise<CommitChangesOptions["fileChanges"]> {
   /**
    * The directory to add files from. This is relative to the repository
    * root, and is used to filter files.
@@ -52,8 +63,8 @@ export async function getFileChanges(
   const relativeStartDirectory =
     cwd === repoRoot ? null : path.relative(repoRoot, cwd) + "/";
 
-  const additions: CommitFilesFromBase64Args["fileChanges"]["additions"] = [];
-  const deletions: CommitFilesFromBase64Args["fileChanges"]["deletions"] = [];
+  const additions: CommitChangesOptions["fileChanges"]["additions"] = [];
+  const deletions: CommitChangesOptions["fileChanges"]["deletions"] = [];
 
   const addPath = async (filePath: string) => {
     if (

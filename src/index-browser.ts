@@ -1,7 +1,7 @@
-export { commitFilesFromBase64 } from "./core.ts";
+export { commitChanges } from "./core.ts";
 
-export function commitChangesFromRepo() {
+export function commitChangesSinceBase() {
   throw new Error(
-    "commitChangesFromRepo is not supported in non-Node.js environments",
+    "commitChangesSinceBase is not supported in non-Node.js environments",
   );
 }
