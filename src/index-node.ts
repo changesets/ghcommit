@@ -13,4 +13,3 @@ export type {
   CommitMessage,
   FileChanges,
 } from "./github/graphql/generated/types.ts";
-export type { Octokit } from "./github/graphql/queries.ts";
