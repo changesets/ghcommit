@@ -67,7 +67,7 @@ jobs:
     steps:
       - uses: $/.github/actions/ci-setup
         with:
-          fetch-depth: 2 # integration tests read the two most recent local commits
+          checkout-fetch-depth: 2 # integration tests read the two most recent local commits
           skip-cache: true # avoid cache poisoning from this only job with write access, just in case
 
       - name: Build
