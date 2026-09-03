@@ -57,7 +57,7 @@
     "fs-fixture": "^2.14.0",
     "oxfmt": "^0.65.0",
     "oxlint": "^1.80.0",
-    "oxlint-tsgolint": "^0.25.0",
+    "oxlint-tsgolint": "^7.0.2001",
     "publint": "^0.3.24",
     "tsdown": "^0.22.14",
     "typescript": "^7.0.2",
