@@ -10,8 +10,7 @@ import {
 export const githubToken = process.env.GITHUB_TOKEN!;
 export const [owner, repo] = process.env.GITHUB_REPOSITORY!.split("/")!;
 
-export const octokit = getOctokit(githubToken);
-
+export const octokit: ReturnType<typeof getOctokit> = getOctokit(githubToken);
 /**
  * GitHub sometimes has a delay between making changes to a git repo,
  * and those changes being reflected in the API.
