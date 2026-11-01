@@ -51,17 +51,17 @@
     "@actions/github": "^9.1.1",
     "@changesets/changelog-github": "^1.0.1",
     "@changesets/cli": "^3.0.3",
-    "@graphql-codegen/cli": "^7.4.2",
+    "@graphql-codegen/cli": "^7.4.6",
     "@tsconfig/node22": "^22.0.6",
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.5",
     "fs-fixture": "^2.16.0",
-    "oxfmt": "^0.70.0",
-    "oxlint": "^1.85.0",
-    "oxlint-tsgolint": "^7.0.2002",
-    "publint": "^0.3.24",
-    "tsdown": "^0.23.0",
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0",
+    "oxlint-tsgolint": "^7.0.2005",
+    "publint": "^0.3.25",
+    "tsdown": "^0.23.2",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.5"
   },
   "engines": {
     "node": "^22.11 || ^24 || >=26"
